@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local/generated SEO OS workspaces
+seo-sites/
+*.sqlite
+*.db
+
+# Secrets and local config
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+token.json
+secrets.json
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

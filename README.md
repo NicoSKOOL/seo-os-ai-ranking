@@ -30,11 +30,29 @@ Google Docs = polished reports and client-facing deliverables
 ## Quick start
 
 ```bash
-cd /root/seo-os-template
-python3 scripts/setup_seo_os.py --client-name "Example Roofing" --domain example.com --client-type local-seo --dry-run
+git clone https://github.com/YOUR-ORG/seo-os-starter-kit.git
+cd seo-os-starter-kit
+python3 scripts/setup_seo_os.py \
+  --client-name "Example Roofing" \
+  --domain example.com \
+  --client-type local-seo \
+  --site-url https://example.com/ \
+  --main-offer "Roof repair and replacement" \
+  --target-audience "Homeowners in Austin" \
+  --conversion-goal "Booked inspection calls" \
+  --gsc-property sc-domain:example.com \
+  --ga4-property 123456789 \
+  --telegram-target telegram:-1001234567890:42 \
+  --first-workflow "Low-CTR title/meta planning" \
+  --content-delivery-mode google_doc \
+  --cms wordpress \
+  --generate-image-style-guide yes \
+  --dry-run
 ```
 
 Remove `--dry-run` when you are ready to create the workspace files.
+
+See `docs/onboarding-sequence.md` for the recommended community onboarding flow.
 
 ## What gets created
 
@@ -60,6 +78,12 @@ For a client such as `example.com`, the setup creates:
     proof-and-assets.md
   site-profile.md
   approval-policy.md
+  analytics-access.md
+  marketing-boundaries.md
+  onboarding-checklist.md
+  content-writing-guidelines.md
+  image-style-guide.md
+  client-intake.md
   AGENTS.md
   client-config.json
 ```
@@ -81,6 +105,34 @@ Telegram Routing
 Performance Snapshot
 Content & Expertise
 ```
+
+## Content defaults
+
+SEO OS includes default writing rules for community sites. These are structure and quality rules, not AI Ranking voice rules:
+
+- TL;DR near the top
+- search-intent answer in the opening
+- content capsules for roughly 60 to 70 percent of most blog posts
+- contextual internal links to relevant site sections/pages
+- external source links on the claims they support
+- FAQ section near the end when useful
+- website-specific image style guide for consistent feature images
+
+See:
+
+- `docs/default-content-and-image-guidelines.md`
+- `docs/content-writing-and-publishing.md`
+
+## Community distribution
+
+The recommended distribution model is a GitHub starter kit:
+
+- users clone or fork the repo
+- updates ship through commits and releases
+- community issues become product feedback
+- stable workflows move into scripts, templates, and the `seo-os` skill
+
+Use releases for stable milestones. Keep risky or experimental workflows behind clear setup flags until proven.
 
 ## Phased setup
 
