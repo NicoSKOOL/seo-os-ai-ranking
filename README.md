@@ -1,4 +1,4 @@
-# SEO OS for Hermes
+# SEO OS AI Ranking
 
 A reusable starter kit for building an SEO operating system on top of Hermes Agent.
 
@@ -30,8 +30,8 @@ Google Docs = polished reports and client-facing deliverables
 ## Quick start
 
 ```bash
-git clone https://github.com/YOUR-ORG/seo-os-starter-kit.git
-cd seo-os-starter-kit
+git clone https://github.com/NicoSKOOL/seo-os-ai-ranking.git
+cd seo-os-ai-ranking
 python3 scripts/setup_seo_os.py \
   --client-name "Example Roofing" \
   --domain example.com \
@@ -181,4 +181,4 @@ Approval is required before:
 
 ## Current status
 
-This starter kit was extracted from Nico's working SEO OS prototype. It is expected to evolve. Add new workflows as separate scripts/templates first, then promote stable workflows into the `seo-os` skill and setup wizard.
+This starter kit was extracted from a working SEO OS prototype. It is expected to evolve. Add new workflows as separate scripts/templates first, then promote stable workflows into the `seo-os` skill and setup wizard.
