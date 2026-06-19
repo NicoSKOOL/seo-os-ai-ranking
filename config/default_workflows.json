@@ -1,0 +1,70 @@
+{
+  "version": "0.1.0",
+  "default_tabs": [
+    "Control Center",
+    "Clients",
+    "Agent Responsibilities",
+    "Schedule",
+    "Activity Log",
+    "Approvals",
+    "SEO Opportunities",
+    "CTR Tests",
+    "Review Management",
+    "Agent Tasks",
+    "Telegram Routing",
+    "Performance Snapshot",
+    "Content & Expertise"
+  ],
+  "default_jobs": [
+    {
+      "name": "Daily SEO OS refresh",
+      "cadence": "daily",
+      "model_strategy": "script-only"
+    },
+    {
+      "name": "Approval/status watcher",
+      "cadence": "every 5 minutes",
+      "model_strategy": "script-only"
+    },
+    {
+      "name": "Performance snapshot refresh",
+      "cadence": "daily",
+      "model_strategy": "script-only"
+    },
+    {
+      "name": "SEO opportunities scan",
+      "cadence": "2-3x/week",
+      "model_strategy": "cheap-model or strong-model if strategy needed"
+    },
+    {
+      "name": "Site health and index recovery check",
+      "cadence": "weekly",
+      "model_strategy": "cheap-model plus scripts"
+    },
+    {
+      "name": "CTR test monitor",
+      "cadence": "daily while tests are running",
+      "model_strategy": "script-only until final report"
+    },
+    {
+      "name": "Client expertise intake",
+      "cadence": "monthly",
+      "model_strategy": "stronger model for question quality"
+    },
+    {
+      "name": "Review management monitor",
+      "cadence": "daily for local SEO",
+      "model_strategy": "script-only plus approved templates"
+    }
+  ],
+  "approval_required_for": [
+    "publishing",
+    "deploying",
+    "redirects",
+    "canonical/noindex changes",
+    "deletions",
+    "external outreach",
+    "client emails in v1",
+    "negative review responses"
+  ]
+}

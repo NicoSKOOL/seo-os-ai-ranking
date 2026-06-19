@@ -1,0 +1,23 @@
+{
+  "tabs": [
+    "Control Center",
+    "Clients",
+    "Agent Responsibilities",
+    "Schedule",
+    "Activity Log",
+    "Approvals",
+    "SEO Opportunities",
+    "CTR Tests",
+    "Review Management",
+    "Agent Tasks",
+    "Telegram Routing",
+    "Performance Snapshot",
+    "Content & Expertise"
+  ],
+  "hidden_tabs": [
+    "Raw Data",
+    "Artifacts Reports",
+    "Config"
+  ],
+  "notes": "Visible tabs should be human-readable and template-friendly."
+}
