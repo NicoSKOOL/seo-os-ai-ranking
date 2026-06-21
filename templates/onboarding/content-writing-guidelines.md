@@ -3,7 +3,7 @@
 Client: {{client_name}}
 Domain: {{domain}}
 
-These are default SEO OS content rules. Adapt the voice, examples, offers, and image style to this website. Do not copy AI Ranking's tone or brand unless this is an AI Ranking site.
+These are default SEO OS content rules. Adapt the voice, examples, offers, and image style to this website. Do not copy another brand's tone or style unless the user explicitly requests it.
 
 ## Required article structure
 
@@ -114,7 +114,7 @@ FAQ rules:
 
 ## Voice and style
 
-The writing should match this client, not AI Ranking.
+The writing should match this client, not the template author's brand.
 
 Default style:
 
@@ -151,4 +151,4 @@ Feature images should be consistent across the site. The guide should define:
 - examples to match
 - examples to avoid
 
-Do not reuse AI Ranking's dark neon style unless the user explicitly wants that style for their site.
+Do not reuse another brand's visual style unless the user explicitly wants that style for their site.

@@ -2,7 +2,7 @@
 name: seo-os
 description: "Use when setting up, operating, or extending SEO OS: a Hermes-powered SEO agency operating system using Google Sheets, per-client profiles, VPS workspaces, approval workflows, CTR tests, content expertise intake, and review management."
 version: 0.1.0
-author: AI Ranking / Hermes Agent
+author: Hermes Agent
 license: MIT
 metadata:
   hermes:
@@ -111,7 +111,7 @@ Prefer:
 Create a separate workspace per client:
 
 ```text
-/root/seo-sites/<domain>/
+~/seo-sites/<domain>/
   data/
   reports/
   drafts/
@@ -164,7 +164,7 @@ These defaults apply to content drafts unless a client's workspace overrides the
 - cite high quality external sources on the specific claims they support
 - link the contextual keyword or claim, not a generic "source" label
 - include suggested up-links from existing pages when possible
-- write in the client's voice, not AI Ranking's or Nico's
+- write in the client's voice, not the template author's
 - avoid generic AI writing, hype, unsupported claims, keyword stuffing, and em dashes
 
 See `docs/default-content-and-image-guidelines.md` for the full reusable policy.
@@ -191,10 +191,10 @@ Ask during onboarding whether the user wants Hermes to generate an image style g
 The guide should live at:
 
 ```text
-/root/seo-sites/<domain>/image-style-guide.md
+~/seo-sites/<domain>/image-style-guide.md
 ```
 
-It should define aspect ratio, palette, mood, illustration/photo/abstract direction, motifs, text policy, negative prompts, examples to match, and examples to avoid. Do not copy AI Ranking's dark neon style unless the user explicitly requests it.
+It should define aspect ratio, palette, mood, illustration/photo/abstract direction, motifs, text policy, negative prompts, examples to match, and examples to avoid. Do not copy another brand's visual style unless the user explicitly requests it.
 
 See `templates/onboarding/image-style-guide.md`.
 

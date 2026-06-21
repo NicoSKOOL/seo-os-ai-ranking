@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SEO OS + Telegram Client Onboarding</title>
+<style>
+:root {
+  --ivory:#FAF9F5; --white:#FFFFFF; --slate:#141413; --clay:#D97757; --olive:#788C5D; --rust:#B04A3F; --oat:#E3DACC;
+  --gray-150:#F0EEE6; --gray-300:#D1CFC5; --gray-500:#87867F; --gray-700:#3D3D3A;
+  --border:1.5px solid var(--gray-300); --radius-panel:18px; --radius-row:10px; --radius-pill:999px;
+  --serif:ui-serif, Georgia, "Times New Roman", serif; --sans:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0} html{scroll-behavior:smooth} body{font-family:var(--sans);background:var(--ivory);color:var(--slate);-webkit-font-smoothing:antialiased;overflow:hidden}
+.deck{height:100vh;width:100vw;overflow-y:auto;scroll-snap-type:y mandatory}.slide{min-height:100vh;width:100%;scroll-snap-align:start;display:flex;align-items:center;justify-content:center;padding:7vh 5vw;position:relative}.slide.dark{background:var(--slate);color:var(--ivory)}.slide.clay{background:linear-gradient(135deg,var(--clay),#B95E42);color:#fff}.inner{width:100%;max-width:1120px}.narrow{max-width:860px}.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-500);margin-bottom:22px}.dark .eyebrow,.clay .eyebrow{color:rgba(255,255,255,.68)}h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.02em}h1{font-size:clamp(48px,7vw,86px);line-height:1.02;margin-bottom:22px}h2{font-size:clamp(34px,5vw,58px);line-height:1.08;margin-bottom:28px}h3{font-family:var(--serif);font-weight:500;font-size:24px;line-height:1.2}.subtitle{font-size:clamp(18px,2.1vw,24px);line-height:1.45;color:var(--gray-700);max-width:760px}.dark .subtitle,.clay .subtitle{color:rgba(255,255,255,.78)}p{font-size:18px;line-height:1.62;color:var(--gray-700)}.dark p{color:rgba(255,255,255,.76)}.mono{font-family:var(--mono)}.pill{display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius-pill);padding:6px 12px;font-family:var(--mono);font-size:12px;background:var(--oat);color:var(--gray-700)}.dark .pill{background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.16)}.byline{display:flex;gap:14px;flex-wrap:wrap;margin-top:50px}.grid{display:grid;gap:18px}.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.card{background:var(--white);border:var(--border);border-radius:var(--radius-panel);padding:24px;box-shadow:0 18px 45px rgba(20,20,19,.05)}.dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);box-shadow:none}.card.focus{border-left:5px solid var(--clay)}.card.good{border-left:5px solid var(--olive)}.card h3{margin-bottom:10px}.card p{font-size:15px}.list{list-style:none;display:grid;gap:13px}.list li{display:grid;grid-template-columns:22px 1fr;gap:12px;font-size:17px;line-height:1.4;color:var(--gray-700)}.dark .list li{color:rgba(255,255,255,.8)}.dot{width:9px;height:9px;border-radius:50%;background:var(--clay);margin-top:8px}.dot.good{background:var(--olive)}.dot.neutral{background:var(--gray-500)}.split{display:grid;grid-template-columns:.9fr 1.1fr;gap:46px;align-items:center}.code{background:var(--slate);color:#E8E6DF;border-radius:16px;padding:20px 22px;font-family:var(--mono);font-size:13px;line-height:1.55;overflow:auto;box-shadow:0 22px 50px rgba(20,20,19,.12)}.dark .code{background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.12)}.code .key{color:#C9B98A}.code .val{color:#A8BF87}.code .hot{color:#E8A181}.rail{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:32px}.step{background:var(--white);border:var(--border);border-radius:14px;padding:14px;min-height:126px}.step strong{display:block;font-family:var(--mono);font-size:11px;color:var(--clay);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}.step span{display:block;font-size:14px;line-height:1.35;color:var(--gray-700)}.diagram{background:var(--white);border:var(--border);border-radius:22px;padding:14px}.diagram svg{display:block;max-height:58vh}.dark .diagram{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.16)}.vs{display:grid;grid-template-columns:1fr 1fr;gap:18px}.vs .head{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px;color:var(--gray-500)}.big-quote{font-family:var(--serif);font-size:clamp(34px,5.2vw,64px);line-height:1.08;letter-spacing:-.02em}.quote-source{margin-top:28px;font-family:var(--mono);font-size:13px;color:var(--gray-500)}.progress{position:fixed;left:0;top:0;height:4px;background:var(--clay);z-index:20;width:0}.controls{position:fixed;right:18px;bottom:18px;z-index:30;display:flex;gap:8px;align-items:center}.btn{border:1px solid rgba(20,20,19,.16);background:rgba(250,249,245,.86);backdrop-filter:blur(10px);border-radius:999px;padding:9px 13px;font-family:var(--mono);font-size:12px;color:var(--gray-700);cursor:pointer}.counter{font-family:var(--mono);font-size:12px;color:var(--gray-500);background:rgba(250,249,245,.86);border:1px solid rgba(20,20,19,.12);border-radius:999px;padding:9px 12px}.tiny-note{position:absolute;left:24px;bottom:20px;font-family:var(--mono);font-size:11px;color:var(--gray-500)}.dark .tiny-note,.clay .tiny-note{color:rgba(255,255,255,.5)}.tag-row{display:flex;gap:10px;flex-wrap:wrap}.stat{padding:26px;border-top:1px solid var(--gray-300)}.stat-num{font-family:var(--serif);font-size:54px;line-height:1;color:var(--slate)}.stat-label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-500);margin-top:12px}.mobile-hint{display:none}@media(max-width:900px){body{overflow:auto}.deck{scroll-snap-type:none}.slide{padding:54px 20px;min-height:auto}.split,.cols-2,.cols-3,.vs{grid-template-columns:1fr}.rail{grid-template-columns:1fr 1fr}.controls{display:none}.mobile-hint{display:block}.code{font-size:12px}.step{min-height:auto}h1{font-size:44px}h2{font-size:34px}}
+@media print{body{overflow:visible}.deck{height:auto;overflow:visible}.slide{break-after:page;min-height:100vh}.controls,.progress{display:none}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<main class="deck" id="deck">
+
+<section class="slide dark title-slide"><div class="inner narrow">
+  <div class="eyebrow">SEO OS community training</div>
+  <h1>SEO OS + Telegram client onboarding</h1>
+  <p class="subtitle">A practical walkthrough of how a website becomes a human-approved SEO operating system, and why Telegram is the client room, not the whole system.</p>
+  <div class="byline"><span class="pill">SEO OS</span><span class="pill">Hermes Agent</span><span class="pill">Telegram topics</span><span class="pill">Human approval</span></div>
+  <div class="tiny-note">Use arrow keys or scroll. Press P to print/export PDF.</div>
+</div></section>
+
+<section class="slide"><div class="inner split">
+  <div><div class="eyebrow">01 / The big idea</div><h2>Turn a website into an SEO operating system</h2><p class="subtitle">Not “AI magically ranks your site.” SEO OS is a workflow where an agent watches data, drafts improvements, and asks before risky actions.</p></div>
+  <div class="grid cols-2">
+    <div class="card focus"><h3>Understands</h3><p>The business, offers, audience, website context, and approval rules.</p></div>
+    <div class="card"><h3>Connects</h3><p>GSC, GA4, website crawl data, content rules, and client knowledge.</p></div>
+    <div class="card"><h3>Drafts</h3><p>Metadata, content briefs, internal links, reports, and safe recommendations.</p></div>
+    <div class="card good"><h3>Asks first</h3><p>Publishing, redirects, canonicals, homepage changes, and outreach stay approval-gated.</p></div>
+  </div>
+</div></section>
+
+<section class="slide"><div class="inner split">
+  <div><div class="eyebrow">02 / The pain</div><h2>Most SEO work is scattered</h2><p class="subtitle">Opportunities are found, reported, and then slowly forgotten because the work lives in too many places.</p></div>
+  <div class="grid cols-2">
+    <div class="card"><ul class="list"><li><i class="dot"></i><span>Google Search Console</span></li><li><i class="dot"></i><span>Google Analytics</span></li><li><i class="dot"></i><span>Spreadsheets</span></li><li><i class="dot"></i><span>Website CMS</span></li></ul></div>
+    <div class="card"><ul class="list"><li><i class="dot neutral"></i><span>Tasks and notes</span></li><li><i class="dot neutral"></i><span>Emails or DMs</span></li><li><i class="dot neutral"></i><span>Agency reports</span></li><li><i class="dot neutral"></i><span>Untracked approvals</span></li></ul></div>
+  </div>
+</div></section>
+
+<section class="slide"><div class="inner narrow">
+  <div class="eyebrow">03 / Definition</div><h2>SEO OS is the control layer for website growth</h2>
+  <div class="grid cols-3">
+    <div class="card"><h3>Context</h3><p>Website, business, audience, offers, content rules, and things the agent must avoid.</p></div>
+    <div class="card"><h3>Data</h3><p>Search, analytics, crawl, performance, reviews, tasks, experiments, and drafts.</p></div>
+    <div class="card"><h3>Action</h3><p>Opportunities, approvals, schedules, reports, CTR tests, and safe next steps.</p></div>
+  </div>
+</div></section>
+
+<section class="slide clay"><div class="inner narrow">
+  <div class="eyebrow">04 / Telegram</div><h2>Telegram is the client room</h2>
+  <p class="subtitle">Each client or website gets its own topic. The topic is where the conversation happens, but it is not the whole operating system.</p>
+  <div class="byline"><span class="pill">Main group: SEO OS / Loki</span><span class="pill">Topic: Client A</span><span class="pill">Topic: Client B</span><span class="pill">Topic: Your own site</span></div>
+</div></section>
+
+<section class="slide"><div class="inner">
+  <div class="eyebrow">05 / Architecture</div><h2>How the pieces relate</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 1080 430" width="100%" role="img" aria-label="SEO OS architecture diagram">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#87867F"/></marker></defs>
+      <rect x="40" y="40" width="220" height="86" rx="18" fill="#F0EEE6" stroke="#D1CFC5"/><text x="150" y="75" text-anchor="middle" font-family="ui-monospace" font-size="14" fill="#3D3D3A">Telegram topic</text><text x="150" y="99" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">client room/chat</text>
+      <rect x="430" y="40" width="220" height="86" rx="18" fill="#FFF" stroke="#D97757" stroke-width="3"/><text x="540" y="75" text-anchor="middle" font-family="ui-monospace" font-size="14" fill="#3D3D3A">SEO OS</text><text x="540" y="99" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">registry + routing</text>
+      <rect x="820" y="40" width="220" height="86" rx="18" fill="#F0EEE6" stroke="#D1CFC5"/><text x="930" y="75" text-anchor="middle" font-family="ui-monospace" font-size="14" fill="#3D3D3A">Same topic</text><text x="930" y="99" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">updates return here</text>
+      <line x1="260" y1="83" x2="430" y2="83" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/><line x1="650" y1="83" x2="820" y2="83" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="540" y1="126" x2="540" y2="190" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="70" y="210" width="200" height="92" rx="18" fill="#FFF" stroke="#D1CFC5"/><text x="170" y="245" text-anchor="middle" font-family="ui-monospace" font-size="13" fill="#3D3D3A">Site profile</text><text x="170" y="269" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">workspace + memory</text>
+      <rect x="315" y="210" width="200" height="92" rx="18" fill="#FFF" stroke="#D1CFC5"/><text x="415" y="245" text-anchor="middle" font-family="ui-monospace" font-size="13" fill="#3D3D3A">GSC + GA4</text><text x="415" y="269" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">search + analytics</text>
+      <rect x="560" y="210" width="200" height="92" rx="18" fill="#FFF" stroke="#D1CFC5"/><text x="660" y="245" text-anchor="middle" font-family="ui-monospace" font-size="13" fill="#3D3D3A">Website crawl</text><text x="660" y="269" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">repo or CMS</text>
+      <rect x="805" y="210" width="200" height="92" rx="18" fill="#FFF" stroke="#D1CFC5"/><text x="905" y="245" text-anchor="middle" font-family="ui-monospace" font-size="13" fill="#3D3D3A">Tasks</text><text x="905" y="269" text-anchor="middle" font-family="system-ui" font-size="15" fill="#87867F">approvals + reports</text>
+      <path d="M540 190 C540 180,170 180,170 210" fill="none" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/><path d="M540 190 C540 180,415 180,415 210" fill="none" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/><path d="M540 190 C540 180,660 180,660 210" fill="none" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/><path d="M540 190 C540 180,905 180,905 210" fill="none" stroke="#87867F" stroke-width="2" marker-end="url(#arrow)"/>
+      <rect x="350" y="350" width="380" height="56" rx="16" fill="#E3DACC" stroke="#D1CFC5"/><text x="540" y="383" text-anchor="middle" font-family="ui-monospace" font-size="14" fill="#3D3D3A">approved SEO work: drafts, reports, PRs</text>
+    </svg>
+  </div>
+</div></section>
+
+<section class="slide"><div class="inner split"><div><div class="eyebrow">06 / Routing</div><h2>The topic name is for humans. The topic ID is for the system.</h2><p class="subtitle">SEO OS saves the real routing target so client data does not leak into the wrong conversation.</p></div><pre class="code">telegram:<span class="hot">&lt;chat_id&gt;</span>:<span class="hot">&lt;thread_id&gt;</span>
+
+<span class="key">Human sees:</span> Client A
+<span class="key">System saves:</span> telegram:<chat_id>:<thread_id></pre></div></section>
+
+<section class="slide dark"><div class="inner split"><div><div class="eyebrow">07 / Onboarding</div><h2>Create the topic. Paste the setup message.</h2><p class="subtitle">This is the clean UX for agency owners and business owners. The form captures enough context to avoid guessing.</p></div><pre class="code">New SEO OS client setup
+
+Client name:
+Website URL:
+Business type:
+Main offer:
+Target audience/location:
+Primary conversion goal:
+GSC property:
+GA4 property:
+CMS/platform:
+Content delivery mode: google_doc
+Generate image style guide? yes
+Approval policy:
+Competitors:
+Repo/hosting:
+Staging URL:
+Reviews/Zernio/GBP:
+Notes:</pre></div></section>
+
+<section class="slide"><div class="inner narrow"><div class="eyebrow">08 / First agent job</div><h2>Understanding comes before changing</h2><div class="grid cols-3"><div class="card"><h3>Research</h3><p>Homepage, about page, services, sitemap, robots.txt, search results, competitors, reviews, and trust signals.</p></div><div class="card focus"><h3>Summarize</h3><p>The agent returns “what I think this client is” before locking the workspace.</p></div><div class="card good"><h3>Correct</h3><p>The user fixes positioning, audience, offer, locations, and claims before SEO work starts.</p></div></div></div></section>
+
+<section class="slide"><div class="inner split"><div><div class="eyebrow">09 / Correction loop</div><h2>The agent should show its assumptions</h2><p class="subtitle">This prevents the whole system from building the wrong strategy.</p></div><pre class="code">Here is what I think this client is:
+
+Business: Local roofing company
+Location: Austin, Texas
+Main offer: Roof repairs and replacements
+Best customers: Homeowners with storm damage
+Likely conversion goal: Calls and quote requests
+SEO angle: Local service pages + reviews
+Potential risks: Verify service areas and licensing claims
+
+Please correct anything before I create the workspace.</pre></div></section>
+
+<section class="slide"><div class="inner"><div class="eyebrow">10 / Workspace</div><h2>Each website gets its own operating context</h2><div class="grid cols-2"><pre class="code">/site-profile.md
+/business-profile.md
+/offers-and-positioning.md
+/competitors.md
+/analytics-access.md
+/approval-policy.md
+/content-rules.md
+/reports/
+/drafts/
+/logs/</pre><div class="card good"><h3>Why this matters</h3><p>The workspace keeps client data, content rules, approval policy, reports, and drafts separated. For serious sites, pair this with a dedicated Hermes profile so memory and credentials do not mix.</p></div></div></div></section>
+
+<section class="slide"><div class="inner split"><div><div class="eyebrow">11 / Data connections</div><h2>Read-only first</h2><p class="subtitle">Do not give the agent full publishing access on day one. Start with evidence and drafts.</p></div><ul class="list card"><li><i class="dot good"></i><span>Google Search Console: read-only</span></li><li><i class="dot good"></i><span>Google Analytics: read-only</span></li><li><i class="dot good"></i><span>Website crawl: public pages</span></li><li><i class="dot good"></i><span>Repo/CMS: read-only or draft-only</span></li><li><i class="dot good"></i><span>Telegram: conversation and approvals</span></li></ul></div></section>
+
+<section class="slide"><div class="inner narrow"><div class="eyebrow">12 / First safe workflow</div><h2>Start with high-impression, low-CTR pages</h2><div class="grid cols-2"><div class="card"><h3>The agent checks</h3><ul class="list"><li><i class="dot"></i><span>Pages with impressions</span></li><li><i class="dot"></i><span>Weak CTR</span></li><li><i class="dot"></i><span>Queries driving impressions</span></li><li><i class="dot"></i><span>Current title, meta, H1, and intent match</span></li></ul></div><div class="card good"><h3>The agent suggests</h3><ul class="list"><li><i class="dot good"></i><span>Title variants</span></li><li><i class="dot good"></i><span>Meta description variants</span></li><li><i class="dot good"></i><span>Internal links</span></li><li><i class="dot good"></i><span>Content fixes</span></li></ul></div></div></div></section>
+
+<section class="slide dark"><div class="inner"><div class="eyebrow">13 / Approval loop</div><h2>Useful agents have boundaries</h2><div class="vs"><div class="card"><div class="head">No extra approval</div><ul class="list"><li><i class="dot good"></i><span>Research and crawl</span></li><li><i class="dot good"></i><span>Read GSC/GA4</span></li><li><i class="dot good"></i><span>Draft titles, metas, posts</span></li><li><i class="dot good"></i><span>Create reports and local drafts</span></li></ul></div><div class="card"><div class="head">Approval required</div><ul class="list"><li><i class="dot"></i><span>Publishing or deploying</span></li><li><i class="dot"></i><span>Redirects, canonicals, noindex</span></li><li><i class="dot"></i><span>Homepage, pricing, service pages</span></li><li><i class="dot"></i><span>External outreach or deletions</span></li></ul></div></div></div></section>
+
+<section class="slide"><div class="inner"><div class="eyebrow">14 / Division of labor</div><h2>Telegram is the interface. SEO OS is the memory and workflow.</h2><div class="vs"><div class="card focus"><h3>Telegram handles</h3><ul class="list"><li><i class="dot"></i><span>Client-specific conversations</span></li><li><i class="dot"></i><span>Quick approvals</span></li><li><i class="dot"></i><span>Questions and corrections</span></li><li><i class="dot"></i><span>Alerts and updates</span></li></ul></div><div class="card good"><h3>SEO OS handles</h3><ul class="list"><li><i class="dot good"></i><span>Client registry and topic routing</span></li><li><i class="dot good"></i><span>Site workspace and analytics data</span></li><li><i class="dot good"></i><span>Tasks, schedules, approvals</span></li><li><i class="dot good"></i><span>Reports and drafts</span></li></ul></div></div></div></section>
+
+<section class="slide"><div class="inner narrow"><div class="eyebrow">15 / Control center</div><h2>Dashboard or Sheet: choose the simplest control layer first</h2><div class="grid cols-3"><div class="card"><h3>Approvals</h3><p>What needs a human decision before work can proceed.</p></div><div class="card"><h3>Schedule</h3><p>What runs daily, weekly, monthly, and what failed.</p></div><div class="card"><h3>Work log</h3><p>What happened recently without mirroring every Telegram message.</p></div><div class="card"><h3>Content</h3><p>Drafts, briefs, refreshes, internal links, and expertise intake.</p></div><div class="card"><h3>CTR tests</h3><p>Title/meta experiments tied to GSC performance.</p></div><div class="card"><h3>Reports</h3><p>Client-ready docs and internal operator notes.</p></div></div></div></section>
+
+<section class="slide"><div class="inner"><div class="eyebrow">16 / Content delivery</div><h2>Different websites need different delivery modes</h2><div class="grid cols-3"><div class="card good"><h3>Google Doc draft-first</h3><p>Default. Works for WordPress, non-technical users, and agency review workflows.</p></div><div class="card"><h3>Astro/Cloudflare staging</h3><p>Advanced. Good for Git-based sites, preview deploys, and PR workflows after boundaries are verified.</p></div><div class="card focus"><h3>WordPress draft mode</h3><p>Only after deliberate API or MCP setup. Publishing still stays approval-gated.</p></div></div></div></section>
+
+<section class="slide"><div class="inner split"><div><div class="eyebrow">17 / Value</div><h2>A repeatable SEO workflow for agencies and owners</h2></div><div class="grid cols-2"><div class="card"><h3>Agency owner</h3><p>One onboarding process, one client room per website, one operating profile per serious site, one approval system, and one way to turn SEO data into action.</p></div><div class="card good"><h3>Business owner</h3><p>A website that keeps watching its own data, finds opportunities, and asks before making changes. Practical, not reckless.</p></div></div></div></section>
+
+<section class="slide"><div class="inner"><div class="eyebrow">18 / Demo flow</div><h2>Onboarding a new website live</h2><div class="rail"><div class="step"><strong>01 Topic</strong><span>Create a Telegram topic with the client name.</span></div><div class="step"><strong>02 Setup</strong><span>Paste the onboarding message inside that topic.</span></div><div class="step"><strong>03 Research</strong><span>Agent researches the site and business.</span></div><div class="step"><strong>04 Correct</strong><span>User reviews the “what I think this client is” brief.</span></div><div class="step"><strong>05 Verify</strong><span>Agent checks GSC, GA4, sitemap, and crawl access.</span></div><div class="step"><strong>06 Approve</strong><span>User approves one safe first SEO action.</span></div></div></div></section>
+
+<section class="slide dark"><div class="inner narrow"><div class="eyebrow">19 / The line to remember</div><div class="big-quote">“Telegram is where we talk. SEO OS is where the SEO work gets organized, tracked, and approved.”</div><div class="quote-source">Use this as the simple community explanation.</div></div></section>
+
+<section class="slide"><div class="inner narrow"><div class="eyebrow">20 / Call to action</div><h2>Build your first SEO OS client room</h2><div class="grid cols-2"><div class="card focus"><h3>Start simple</h3><ul class="list"><li><i class="dot"></i><span>Choose one website</span></li><li><i class="dot"></i><span>Create one Telegram topic</span></li><li><i class="dot"></i><span>Connect GSC and GA4 read-only</span></li><li><i class="dot"></i><span>Approve one low-risk workflow</span></li></ul></div><div class="card good"><h3>Do not overbuild day one</h3><p>Do not automate the whole agency immediately. Start with one useful workflow that produces a measurable improvement.</p></div></div></div></section>
+
+</main>
+<div class="controls"><button class="btn" id="prev">← Prev</button><span class="counter" id="count">1 / 20</span><button class="btn" id="next">Next →</button></div>
+<script>
+(function(){
+  const deck=document.getElementById('deck'); const slides=[...document.querySelectorAll('.slide')]; const count=document.getElementById('count'); const progress=document.getElementById('progress');
+  function index(){return Math.round(deck.scrollTop / window.innerHeight)}
+  function go(i){slides[Math.max(0,Math.min(slides.length-1,i))].scrollIntoView({behavior:'smooth',block:'start'})}
+  function update(){const i=Math.max(0,Math.min(slides.length-1,index())); count.textContent=(i+1)+' / '+slides.length; progress.style.width=((i+1)/slides.length*100)+'%'}
+  document.getElementById('prev').onclick=()=>go(index()-1); document.getElementById('next').onclick=()=>go(index()+1);
+  window.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(index()+1)} if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();go(index()-1)} if(e.key.toLowerCase()==='p'){window.print()}});
+  deck.addEventListener('scroll',()=>requestAnimationFrame(update)); update();
+})();
+</script>
+</body>
+</html>

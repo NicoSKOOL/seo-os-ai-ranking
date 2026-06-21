@@ -10,7 +10,7 @@ Use this guide before generating feature images, in-body graphics, or visual ass
 
 Create a consistent visual system for this site's SEO content so images feel like they belong to the same brand.
 
-Do not copy AI Ranking's visual style unless the user explicitly asks for it.
+Do not copy another brand's visual style unless the user explicitly asks for it.
 
 ## Brand inputs to collect
 

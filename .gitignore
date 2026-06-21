@@ -1,23 +1,37 @@
 # Python
 __pycache__/
 *.py[cod]
-.pytest_cache/
+.venv/
+venv/
 
-# Local/generated SEO OS workspaces
-seo-sites/
+# Local SEO OS state, never commit real data
+data/*
+!data/.gitkeep
+logs/*
+!logs/.gitkeep
+generated/*
+!generated/.gitkeep
 *.sqlite
+*.sqlite-*
 *.db
+*.db-*
+*.jsonl
 
-# Secrets and local config
+# Credentials and local config
 .env
 .env.*
-*.key
+*credentials*.json
+*client_secret*.json
+*token*.json
 *.pem
-credentials.json
-token.json
-secrets.json
+*.key
+
+# Office/export artifacts
+*.xlsx
+*.xls
+*.csv
 
 # OS/editor
 .DS_Store
-.vscode/
 .idea/
+.vscode/

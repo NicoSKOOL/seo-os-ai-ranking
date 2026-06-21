@@ -1,1 +1,0 @@
-Thank you for sharing your feedback. We’re sorry to hear your experience did not meet expectations. Please contact {{business_contact}} directly so we can understand what happened and work to rectify the issue.

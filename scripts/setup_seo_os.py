@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 TEMPLATE_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE = Path('/root/seo-sites')
+DEFAULT_BASE = Path.home() / 'seo-sites'
 KNOWLEDGE_TEMPLATE_DIR = TEMPLATE_ROOT / 'templates' / 'client-knowledge'
 ONBOARDING_TEMPLATE_DIR = TEMPLATE_ROOT / 'templates' / 'onboarding'
 
@@ -58,7 +58,7 @@ def mkdir(path: Path, dry_run: bool) -> None:
 
 
 def create_profile(profile: str, dry_run: bool) -> dict:
-    profile_path = Path('/root/.hermes/profiles') / profile
+    profile_path = Path.home() / '.hermes' / 'profiles' / profile
     if profile_path.exists():
         return {'attempted': False, 'ok': True, 'message': 'profile already exists', 'path': str(profile_path)}
     cmd = ['hermes', 'profile', 'create', profile, '--clone', 'default']
