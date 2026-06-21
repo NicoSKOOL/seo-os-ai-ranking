@@ -263,7 +263,7 @@ def summary(conn: sqlite3.Connection, client_id: str = "all") -> dict:
     settings = {r["key"]: r["value"] for r in conn.execute("SELECT * FROM settings")}
 
     def match(row: dict) -> bool:
-        return client_id == "all" or row.get("client_id") in (client_id, "all")
+        return client_id == "all" or row.get("client_id") == client_id
 
     visible_clients = clients if client_id == "all" else [c for c in clients if c["id"] == client_id]
     data = {

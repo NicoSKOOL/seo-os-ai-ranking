@@ -36,6 +36,11 @@ function clientName(id){
   return c ? c.name : id;
 }
 function clientDot(id){ return id === 'demo-local' ? 'green' : id === 'demo-saas' ? 'blue' : id === 'setup-client' ? 'amber' : 'muted'; }
+function clientScoped(rows){
+  if(state.client === 'all') return rows || [];
+  return (rows || []).filter(row => row.client_id === state.client);
+}
+function strictClientLabel(){ return state.client === 'all' ? 'all clients' : clientName(state.client); }
 function classForStatus(status){
   if(['approved','ok','active','complete','done','connected','ready'].includes(status)) return 'green';
   if(['needs_review','waiting','waiting_for_approval','setup_needed','needs_setup','needs_changes'].includes(status)) return 'amber';
@@ -181,41 +186,25 @@ function tasksView(){
 
 function contentView(){
   const d = state.data;
-  const columns = [
-    {stage:'Ideas', color:'blue', items:[
-      ['Demo SaaS feature page intent expansion','Demo SaaS Company','From striking-distance query cluster','Course landing page'],
-      ['Demo service FAQ block','Demo Local Roofing','From high impressions, zero clicks','Feature page']
-    ]},
-    {stage:'Brief', color:'purple', items:[
-      ['SERP gap brief for demo comparison article','Demo Local Roofing','Approved plan, needs draft approval','Blog refresh']
-    ]},
-    {stage:'Drafting', color:'amber', items:[
-      ['Example service page refresh','Demo SaaS Company','Waiting for approval before staging','Blog refresh']
-    ]},
-    {stage:'Review', color:'green', items:[
-      ['Internal-link pass for demo service pages','Demo Local Roofing','Agent can prepare suggestions safely','Internal links']
-    ]},
-    {stage:'Published / Monitor', color:'muted', items:[
-      ['Published changes get 28-day follow-up','All Clients','Locks baseline metrics before publishing','Measurement']
-    ]}
-  ];
-  const stats = `<div class="stat-row"><span><b>5</b> active content items</span><span><b>2</b> approval-gated drafts</span><span><b>3</b> refreshes, not new URLs</span><span><b>0</b> auto-publish actions</span></div>`;
-  const board = `<div class="kanban-board">${columns.map(col => `<div class="kanban-col"><div class="kanban-head"><span class="dot ${col.color}"></span><strong>${col.stage}</strong><span>${col.items.length}</span></div>${col.items.map(([title,client,source,type]) => `<div class="kanban-card"><span class="tag ${col.color==='muted'?'blue':col.color}">${type}</span><h3>${esc(title)}</h3><p>${esc(source)}</p><div class="kanban-meta"><span class="dot ${client.includes('Demo Local')?'green':client.includes('Demo SaaS Company')?'blue':'muted'}"></span>${esc(client)}<small>Approval-gated</small></div></div>`).join('')}</div>`).join('')}</div>`;
-  const rows = d.opportunities.filter(o => ['Content refresh','SERP gap','Striking distance'].includes(o.opportunity_type)).map(o => `<tr><td>${esc(clientName(o.client_id))}</td><td><strong>${esc(new URL(o.page).pathname)}</strong><div class="url">${esc(o.page)}</div></td><td>${label(o.opportunity_type)}</td><td><span class="tag ${classForStatus(o.priority)}">${label(o.priority)}</span></td><td>${esc(o.recommended_workflow)}</td><td><span class="tag amber">Needs approval before publish</span></td></tr>`);
-  return page('Content Pipeline','Everything Hermes is drafting or has queued for clients. Drafts are approval-gated before any page goes live.', stats + board + section('Content Opportunities','Refresh existing URLs first. Avoid duplicate or cannibalizing content.','edit','purple',rows.length, simpleTable(['Client','Page','Content work','Priority','Recommended workflow','Gate'], rows)));
+  const contentOpps = clientScoped(d.opportunities).filter(o => ['Content refresh','SERP gap','Striking distance','Low CTR'].includes(o.opportunity_type));
+  const stageFor = o => o.status === 'task_created' ? 'Review' : o.status === 'needs_approval' ? 'Brief' : o.opportunity_type === 'Content refresh' ? 'Ideas' : 'Drafting';
+  const stages = ['Ideas','Brief','Drafting','Review','Published / Monitor'];
+  const colors = {'Ideas':'blue','Brief':'purple','Drafting':'amber','Review':'green','Published / Monitor':'muted'};
+  const byStage = Object.fromEntries(stages.map(stage => [stage, []]));
+  contentOpps.forEach(o => byStage[stageFor(o)].push(o));
+  const activeCount = contentOpps.length;
+  const gatedCount = contentOpps.filter(o => ['needs_approval','task_created'].includes(o.status)).length;
+  const stats = `<div class="stat-row"><span><b>${activeCount}</b> active content items</span><span><b>${gatedCount}</b> approval-gated</span><span><b>${strictClientLabel()}</b></span><span><b>0</b> auto-publish actions</span></div>`;
+  const board = `<div class="kanban-board">${stages.map(stage => `<div class="kanban-col"><div class="kanban-head"><span class="dot ${colors[stage]}"></span><strong>${stage}</strong><span>${byStage[stage].length}</span></div>${byStage[stage].map(o => `<div class="kanban-card"><span class="tag ${colors[stage]==='muted'?'blue':colors[stage]}">${label(o.opportunity_type)}</span><h3>${esc(new URL(o.page).pathname)}</h3><p>${esc(o.recommended_workflow)}</p><div class="kanban-meta"><span class="dot ${clientDot(o.client_id)}"></span>${esc(clientName(o.client_id))}<small>Approval-gated</small></div></div>`).join('') || '<div class="empty">No client items.</div>'}</div>`).join('')}</div>`;
+  const rows = contentOpps.map(o => `<tr><td>${esc(clientName(o.client_id))}</td><td><strong>${esc(new URL(o.page).pathname)}</strong><div class="url">${esc(o.page)}</div></td><td>${label(o.opportunity_type)}</td><td><span class="tag ${classForStatus(o.priority)}">${label(o.priority)}</span></td><td>${esc(o.recommended_workflow)}</td><td><span class="tag amber">Needs approval before publish</span></td></tr>`);
+  return page('Content Pipeline',`Client-scoped content and refresh work for ${strictClientLabel()}. Drafts are approval-gated before any page goes live.`, stats + board + section('Content Opportunities','Refresh existing URLs first. Avoid duplicate or cannibalizing content.','edit','purple',rows.length, simpleTable(['Client','Page','Content work','Priority','Recommended workflow','Gate'], rows)));
 }
-
 function ctrView(){
-  const tests = [
-    {client:'Demo SaaS Company', page:'https://demo-saas.example/blog/demo-topic/', query:'demo target keyword', status:'Needs approval', color:'amber', proposed:'Demo Page Title Variant for Higher CTR', note:'High impressions, 0.23% CTR, avg position 11.2. Safe first loop: approve test, lock baseline, stage title/meta only.'},
-    {client:'Demo Local Roofing', page:'https://www.demo-localseo.com/features/reporting/', query:'demo comparison keyword', status:'Ready to brief', color:'blue', proposed:'Demo Comparison Page Title | Demo SaaS Company', note:'Position 3.5 but CTR under 1%. Needs SERP snippet comparison before approval.'},
-    {client:'Demo Local Roofing', page:'https://www.demo-localseo.com/roof-repair/', query:'demo service keyword', status:'New opportunity', color:'green', proposed:'Demo Service Page Title | Demo Local Roofing', note:'Zero clicks from 1,308 impressions. Cheap model can draft variants after raw data pull.'}
-  ];
-  const cards = `<div class="ctr-grid">${tests.map(t=>`<div class="card ctr-card"><div class="approval-top"><span class="tag ${t.color}">${t.status}</span><span class="tag ${t.client.includes('Demo Local')?'green':'blue'}">${t.client}</span></div><h3>${esc(new URL(t.page).pathname)}</h3><div class="muted">Target: ${esc(t.query)}</div><div class="proposed"><small>Proposed title / meta test</small><p>${esc(t.proposed)}</p></div><div class="metric-strip"><div><b>—</b><span>Start CTR</span></div><div><b>—</b><span>Clicks</span></div><div><b>—</b><span>Impr.</span></div></div><div class="ctr-footer"><span>${esc(t.note)}</span><button class="btn primary" data-open-approvals>Request approval</button></div></div>`).join('')}</div>`;
+  const lowCtrOpps = clientScoped(state.data.opportunities).filter(o => o.opportunity_type === 'Low CTR' || Number(o.ctr || 0) < 2).slice(0, 12);
+  const cards = lowCtrOpps.length ? `<div class="ctr-grid">${lowCtrOpps.map(o=>`<div class="card ctr-card"><div class="approval-top"><span class="tag ${classForStatus(o.status)}">${label(o.status)}</span><span class="tag ${clientDot(o.client_id)}">${esc(clientName(o.client_id))}</span></div><h3>${esc(new URL(o.page).pathname)}</h3><div class="muted">Current CTR: ${pct(o.ctr)} · Avg position ${Number(o.position).toFixed(1)}</div><div class="proposed"><small>Recommended title/meta test workflow</small><p>${esc(o.recommended_workflow)}</p></div><div class="metric-strip"><div><b>${pct(o.ctr)}</b><span>Start CTR</span></div><div><b>${fmt(o.clicks)}</b><span>Clicks</span></div><div><b>${fmt(o.impressions)}</b><span>Impr.</span></div></div><div class="ctr-footer"><span>${esc(o.problem)}</span><button class="btn primary" data-open-approvals>Request approval</button></div></div>`).join('')}</div>` : `<div class="card"><div class="empty">No CTR tests or low-CTR opportunities for ${esc(strictClientLabel())}.</div></div>`;
   setTimeout(()=>document.querySelectorAll('[data-open-approvals]').forEach(b=>b.onclick=()=>{state.section='Approvals';render()}),0);
-  return page('CTR Tests','Title and meta tests. Hermes suggests a test, the user approves, baseline metrics lock, then SEO OS monitors the winner.', cards);
+  return page('CTR Tests',`Client-scoped title and meta tests for ${strictClientLabel()}. Hermes suggests a test, the user approves, baseline metrics lock, then SEO OS monitors the winner.`, cards);
 }
-
 function scheduleButton(label, active, attrs){
   return `<button class="seg-btn ${active?'active':''}" ${attrs}>${label}</button>`;
 }
@@ -241,7 +230,8 @@ function scheduleView(){
     return `<div class="month-cell ${day>30?'muted-cell':''}"><div class="month-num">${day<=30?day:''}</div>${event?`<div class="month-bar"><b>${esc(event.next_run.split(' ').pop())}</b> ${esc(event.name)}</div>`:''}</div>`;
   }).join('');
   const month = `<div class="month-cal"><div class="month-dow">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(h=>`<div>${h}</div>`).join('')}</div><div class="month-grid">${monthCells}</div></div>`;
-  const overdue = jobs.some(j=>j.status==='setup_needed') ? `<div class="sched-overdue">${icon('calendar',15)}<span><b>1 job behind schedule —</b> review source review monitor is waiting for setup.</span></div>` : '';
+  const setupNeeded = jobs.filter(j=>j.status==='setup_needed');
+  const overdue = setupNeeded.length ? `<div class="sched-overdue">${icon('calendar',15)}<span><b>${setupNeeded.length} setup-needed job${setupNeeded.length===1?'':'s'} —</b> ${esc(setupNeeded.map(j=>j.name).join(', '))}</span></div>` : '';
   const header = `<div class="sched-page-head"><div><h1>Schedule</h1><p>Recurring agent work for the week ahead. Job IDs and scripts stay inside Hermes.</p></div><div class="sched-controls">${showCal?`<div class="segmented">${scheduleButton('7 days', range7, 'data-sched-range="7"')}${scheduleButton('30 days', !range7, 'data-sched-range="30"')}</div>`:''}<div class="segmented">${scheduleButton('Calendar', showCal, 'data-sched-view="calendar"')}${scheduleButton('List', !showCal, 'data-sched-view="list"')}</div></div></div>`;
   setTimeout(()=>{
     document.querySelectorAll('[data-sched-view]').forEach(b=>b.onclick=()=>{state.schedView=b.dataset.schedView;render()});
@@ -288,7 +278,7 @@ function reportsView(){
 function settingsView(){
   const s=state.data.settings;
   const clientRows = state.data.clients.map(c => `<div class="delete-client-row"><div><strong>${esc(c.name)}</strong><span>${esc(c.domain)} · ${esc(c.hermes_profile)}</span></div><button class="btn danger" data-delete-client="${esc(c.id)}">Delete client</button></div>`).join('');
-  const body = `<div class="grid" style="grid-template-columns:1.1fr .9fr"><div class="card settings-card"><h3>Onboarding model</h3><p>For the people we give SEO OS to, setup should be: connect GSC, GA4, and review source, then let SEO OS create the managed jobs. No manual cron setup.</p><div class="connection-list"><div><span>Scheduler</span><strong>${esc(s.scheduler_mode)}</strong></div><div><span>Model policy</span><strong>Cheap by default</strong></div><div><span>Approval safety</span><strong>State first, production later</strong></div></div></div><div class="card settings-card"><h3>Recommended v1 config</h3><div class="codebox">clients.yaml\n  client_id\n  domain\n  gsc_property\n  ga4_property\n  zernio_account\n  hermes_profile\n  telegram_topic\n\nseo-os.sqlite\n  approvals\n  opportunities\n  tasks\n  jobs\n  reports\n  activity_events</div></div><div class="card settings-card" style="grid-column:1/-1"><h3>Safe action policy</h3><p>${esc(s.safe_actions)}</p><p><strong>Model policy:</strong> ${esc(s.model_policy)}</p><p><strong>Product setup goal:</strong> ${esc(s.onboarding_goal)}</p></div><div class="card settings-card danger-zone" style="grid-column:1/-1"><h3>Danger zone: delete client</h3><p>Settings-only destructive control. This removes the client and client-scoped prototype rows from SQLite. Production v1 should archive/export first, then require a stronger confirmation.</p><div class="delete-client-list">${clientRows}</div></div></div>`;
+  const body = `<div class="grid" style="grid-template-columns:1.1fr .9fr"><div class="card settings-card"><h3>Onboarding model</h3><p>For the people we give SEO OS to, setup should be: add the client from Telegram, auto-create the dashboard row, per-client Hermes profile, workspace, setup tasks, and Telegram confirmation, then connect GSC, GA4, and review source. No manual cron setup.</p><div class="connection-list"><div><span>Scheduler</span><strong>${esc(s.scheduler_mode)}</strong></div><div><span>Model policy</span><strong>Cheap by default</strong></div><div><span>Approval safety</span><strong>State first, production later</strong></div></div></div><div class="card settings-card"><h3>Recommended v1 config</h3><div class="codebox">clients.yaml\n  client_id\n  domain\n  gsc_property\n  ga4_property\n  zernio_account\n  hermes_profile\n  telegram_topic\n\nseo-os.sqlite\n  approvals\n  opportunities\n  tasks\n  jobs\n  reports\n  activity_events</div></div><div class="card settings-card" style="grid-column:1/-1"><h3>Safe action policy</h3><p>${esc(s.safe_actions)}</p><p><strong>Model policy:</strong> ${esc(s.model_policy)}</p><p><strong>Product setup goal:</strong> ${esc(s.onboarding_goal)}</p></div><div class="card settings-card danger-zone" style="grid-column:1/-1"><h3>Danger zone: delete client</h3><p>Settings-only destructive control. This removes the client and client-scoped prototype rows from SQLite. Production v1 should archive/export first, then require a stronger confirmation.</p><div class="delete-client-list">${clientRows}</div></div></div>`;
   setTimeout(()=>document.querySelectorAll('[data-delete-client]').forEach(b=>b.onclick=()=>deleteClient(b.dataset.deleteClient)),0);
   return page('Settings & Routing','Client routing, data integrations, model policy, and safe action rules.', body);
 }
