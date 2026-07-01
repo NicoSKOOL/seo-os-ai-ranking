@@ -185,16 +185,14 @@ def complete_command(cfg: dict, cmd_id: str, status: str, result=None, error=Non
 
 
 # ── Chat with Hermes (Phase C) ──────────────────────────────────────────────
-# SAFETY HOLD. Chat execution is GATED OFF.
-# We confirmed empirically (echo test, 2026-06-29) that `hermes -z -t <toolsets>` is
-# ADDITIVE: it ADDS toolsets but does NOT remove the CLI platform's default-enabled
-# tools (terminal, file, code_execution, browser, ...). So `-t web,search,vision` does
-# NOT restrict Hermes, and `-z` auto-bypasses approvals. Running chat through `-z` would
-# therefore give Hermes full tool access with no approval gate -> unacceptable.
-# Until a real restriction is in place (a dedicated locked-down profile, or disabling the
-# dangerous tools for the relevant platform), the bridge MUST NOT invoke Hermes for chat.
-CHAT_ENABLED = False
-SAFE_CHAT_TOOLSETS = "web,search,vision"  # NOTE: additive, does NOT restrict (see above)
+# Chat now runs via the ACP relay (`hermes -p <profile> acp`, see run_acp_chat),
+# NOT the old `hermes -z` path (which bypassed approvals). ACP gives Telegram
+# parity: full tools + memory, per client, inside the client's folder, with file
+# edits gated. Gated OFF by default; enable by setting SEO_OS_CHAT_ENABLED=true
+# in the environment (e.g. the systemd EnvironmentFile). Reversible: unset to
+# fall back to the polite "chat is off" reply.
+CHAT_ENABLED = os.environ.get("SEO_OS_CHAT_ENABLED", "false").strip().lower() in ("1", "true", "yes")
+SAFE_CHAT_TOOLSETS = "web,search,vision"  # legacy (old -z path only); unused by the ACP relay
 CHAT_TIMEOUT_SECONDS = 180
 
 # Stage 1 ACP relay: chat runs via `hermes -p <profile> acp`, driven by the
