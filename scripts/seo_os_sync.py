@@ -362,6 +362,63 @@ def apply_command(conn: sqlite3.Connection, cmd: dict) -> dict:
             ).fetchone()
             hermes_profile = (prof_row["hermes_profile"] if prof_row else None) or "seo-agent"
 
+            if EXECUTE_ENABLED:
+                ws_row = conn.execute(
+                    "SELECT workspace, domain FROM clients WHERE id=?", (client_id,)
+                ).fetchone() if client_id else None
+                workspace = "/root"
+                if ws_row:
+                    w = (ws_row["workspace"] or "").strip()
+                    if w and os.path.isdir(w):
+                        workspace = w
+                    elif ws_row["domain"] and os.path.isdir(f"/root/seo-sites/{ws_row['domain']}"):
+                        workspace = f"/root/seo-sites/{ws_row['domain']}"
+                appr_dict = dict(appr) if appr else {
+                    "title": title, "requested_action": requested_action, "source_url": source_url}
+                effective_asset = source_url or f"approval:{approval_id}"
+                try:
+                    report, _sid = run_acp_execute(
+                        hermes_profile, workspace, compose_execute_prompt(appr_dict))
+                    task_status, ok = "done", True
+                    summary = report
+                except Exception as exc:  # execution failed; record + let operator retry
+                    task_status, ok = "failed", False
+                    summary = f"Execution failed: {exc}"
+
+                existing = conn.execute(
+                    "SELECT id FROM agent_tasks WHERE page_asset=?", (effective_asset,)
+                ).fetchone()
+                if existing:
+                    conn.execute(
+                        "UPDATE agent_tasks SET status=?, source='Dashboard approval (executed)', "
+                        "next_action=?, notes=?, updated_at=? WHERE id=?",
+                        (task_status, requested_action, summary[:2000], now(), existing["id"]),
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO agent_tasks (id,client_id,title,priority,status,source,"
+                        "owner_profile,page_asset,next_action,notes,created_at,updated_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (uid("task"), client_id, f"Executed: {title}", "high", task_status,
+                         "Dashboard approval (executed)", hermes_profile, effective_asset,
+                         requested_action, summary[:2000], now(), now()),
+                    )
+                conn.execute(
+                    "UPDATE approval_requests SET status='approved', decision_note=?, "
+                    "updated_at=? WHERE id=?",
+                    (summary[:2000], now(), approval_id),
+                )
+                conn.execute(
+                    "INSERT INTO activity_events (id,client_id,kind,summary,created_at) "
+                    "VALUES (?,?,?,?,?)",
+                    (uid("evt"), client_id, "chat_execute",
+                     f"Executed: {title} - {summary[:200]}", now()),
+                )
+                conn.commit()
+                return {"status": "done" if ok else "failed",
+                        "result": {"executed": True, "report": summary[:2000]} if ok else None,
+                        "error": None if ok else summary}
+
             # Create/update the bounded task, keyed by page_asset. When the approval
             # has no source_url, key on a stable per-approval marker so a re-applied
             # command (e.g. after a 15-minute stale reclaim) UPDATEs the same task
