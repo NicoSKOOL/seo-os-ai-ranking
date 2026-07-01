@@ -392,9 +392,9 @@ body{
 
 /* ---------- Chat with Hermes (Phase C) ---------- */
 .chat-toggle{color:#7C3AED;}
-.chat-toggle .hermes-ico{width:26px;height:26px;object-fit:contain;image-rendering:pixelated;}
-.chat-head-ico img.hermes-ico{width:28px;height:28px;object-fit:contain;image-rendering:pixelated;}
-.chat-empty img.hermes-ico{width:58px;height:58px;object-fit:contain;image-rendering:pixelated;margin-bottom:10px;}
+.chat-toggle .hermes-ico{width:30px;height:30px;object-fit:cover;border-radius:9999px;}
+.chat-head-ico img.hermes-ico{width:32px;height:32px;object-fit:cover;border-radius:8px;}
+.chat-empty img.hermes-ico{width:64px;height:64px;object-fit:contain;border-radius:12px;margin-bottom:10px;}
 #chat-panel{position:fixed;top:0;right:0;height:100%;z-index:70;}
 .chat-win{width:400px;max-width:94vw;height:100%;background:#fff;border-left:1px solid #E3E9E5;box-shadow:-12px 0 32px rgba(16,33,20,.14);display:flex;flex-direction:column;animation:so-slide .2s cubic-bezier(.2,.7,.3,1);}
 .chat-head{display:flex;align-items:center;gap:11px;padding:16px 18px;border-bottom:1px solid #EAEFEC;}
