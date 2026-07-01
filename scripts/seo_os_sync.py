@@ -197,6 +197,11 @@ CHAT_ENABLED = False
 SAFE_CHAT_TOOLSETS = "web,search,vision"  # NOTE: additive, does NOT restrict (see above)
 CHAT_TIMEOUT_SECONDS = 180
 
+# Stage 1 ACP relay: chat runs via `hermes -p <profile> acp`, driven by the
+# bundled `acp` library from acp_chat.py, executed by the Hermes venv Python.
+VENV_PY = os.environ.get("HERMES_VENV_PY", "/usr/local/lib/hermes-agent/venv/bin/python")
+ACP_CHAT_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "acp_chat.py")
+
 
 def compose_chat_prompt(body: str, client_name) -> str:
     scope = f'the client "{client_name}"' if client_name else "all clients (orchestrator overview)"
@@ -239,6 +244,26 @@ def run_hermes_oneshot(prompt: str, session_key: str, cwd) -> str:
     if cp.returncode != 0:
         raise RuntimeError(f"hermes -z exited {cp.returncode}: {(cp.stderr or '')[-400:]}")
     return (cp.stdout or "").strip()
+
+
+def run_acp_chat(profile: str, workspace: str, message: str, session_id,
+                 timeout: int = CHAT_TIMEOUT_SECONDS):
+    """Run one ACP chat turn via acp_chat.py (Hermes venv). Returns (reply, session_id)."""
+    args = [VENV_PY, ACP_CHAT_SCRIPT, "--profile", profile,
+            "--workspace", workspace, "--timeout", str(timeout)]
+    if session_id:
+        args += ["--session", session_id]
+    cp = subprocess.run(args, input=message, capture_output=True, text=True,
+                        timeout=timeout + 60)
+    line = (cp.stdout or "").strip().splitlines()[-1] if (cp.stdout or "").strip() else ""
+    try:
+        data = json.loads(line)
+    except Exception:
+        raise RuntimeError(f"acp_chat bad output (rc={cp.returncode}): "
+                           f"{(cp.stdout or '')[-300:]} {(cp.stderr or '')[-300:]}")
+    if not data.get("ok"):
+        raise RuntimeError(f"acp_chat error: {data.get('error')}")
+    return data.get("reply", ""), data.get("session_id")
 
 
 def ensure_chat_sessions_table(conn: sqlite3.Connection) -> None:
@@ -408,7 +433,21 @@ def apply_command(conn: sqlite3.Connection, cmd: dict) -> dict:
             elif os.path.isdir("/root/seo-sites/_orchestrator"):
                 cwd = "/root/seo-sites/_orchestrator"
 
-            reply = run_hermes_oneshot(compose_chat_prompt(body, client_name), session_key, cwd)
+            ensure_chat_sessions_table(conn)
+            profile = None
+            if client_id:
+                prow = conn.execute(
+                    "SELECT hermes_profile FROM clients WHERE id=?", (client_id,)
+                ).fetchone()
+                profile = (prow["hermes_profile"] or "").strip() if prow else None
+            profile = profile or "default"
+            workspace = cwd or "/root"
+            prior_sid = get_acp_session_id(conn, session_key)
+            reply, new_sid = run_acp_chat(
+                profile, workspace, compose_chat_prompt(body, client_name), prior_sid)
+            if new_sid:
+                set_acp_session_id(conn, session_key, new_sid)
+                conn.commit()
             clean, raw_proposals = parse_proposals(reply)
 
             proposals = []
