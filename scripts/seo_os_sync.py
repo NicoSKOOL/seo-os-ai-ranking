@@ -200,6 +200,12 @@ CHAT_TIMEOUT_SECONDS = 180
 VENV_PY = os.environ.get("HERMES_VENV_PY", "/usr/local/lib/hermes-agent/venv/bin/python")
 ACP_CHAT_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "acp_chat.py")
 
+# Stage 2 approve-to-execute: when enabled, approving a card runs the change via
+# an ACP execute turn (edits auto-allowed). Ships OFF; enable with
+# SEO_OS_EXECUTE_ENABLED=true. When off, approvals behave exactly as before.
+EXECUTE_ENABLED = os.environ.get("SEO_OS_EXECUTE_ENABLED", "false").strip().lower() in ("1", "true", "yes")
+EXECUTE_TIMEOUT_SECONDS = 900
+
 
 def compose_chat_prompt(body: str, client_name, section=None) -> str:
     scope = f'the client "{client_name}"' if client_name else "all clients (orchestrator overview)"
@@ -262,6 +268,42 @@ def run_acp_chat(profile: str, workspace: str, message: str, session_id,
                            f"{(cp.stdout or '')[-300:]} {(cp.stderr or '')[-300:]}")
     if not data.get("ok"):
         raise RuntimeError(f"acp_chat error: {data.get('error')}")
+    return data.get("reply", ""), data.get("session_id")
+
+
+def compose_execute_prompt(approval: dict) -> str:
+    title = (approval.get("title") or "").strip()
+    action = (approval.get("requested_action") or "").strip()
+    evidence = (approval.get("evidence") or "").strip()
+    src = (approval.get("source_url") or "").strip()
+    return (
+        "You are EXECUTING a change the operator has ALREADY APPROVED in the SEO OS "
+        "dashboard. Apply it fully in this repository: make the edits, build/QA, and "
+        "deploy to production if the change warrants it. Do not ask for confirmation. "
+        "When finished, reply with a short factual summary of exactly what you changed, "
+        "and state clearly whether you deployed to production.\n\n"
+        f"Approved change: {title}\n"
+        f"What to do: {action}\n"
+        f"Evidence/context: {evidence}\n"
+        f"Target: {src}"
+    )
+
+
+def run_acp_execute(profile: str, workspace: str, instruction: str,
+                    timeout: int = EXECUTE_TIMEOUT_SECONDS):
+    """Run one post-approval EXECUTE turn (edits auto-allowed). Returns (report, session_id)."""
+    args = [VENV_PY, ACP_CHAT_SCRIPT, "--profile", profile, "--workspace", workspace,
+            "--execute", "--timeout", str(timeout)]
+    cp = subprocess.run(args, input=instruction, capture_output=True, text=True,
+                        timeout=timeout + 60)
+    line = (cp.stdout or "").strip().splitlines()[-1] if (cp.stdout or "").strip() else ""
+    try:
+        data = json.loads(line)
+    except Exception:
+        raise RuntimeError(f"acp_execute bad output (rc={cp.returncode}): "
+                           f"{(cp.stdout or '')[-300:]} {(cp.stderr or '')[-300:]}")
+    if not data.get("ok"):
+        raise RuntimeError(f"acp_execute error: {data.get('error')}")
     return data.get("reply", ""), data.get("session_id")
 
 
