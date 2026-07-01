@@ -15,6 +15,7 @@ import json
 import sys
 
 HERMES = "/root/.local/bin/hermes"
+EXECUTE_TIMEOUT = 900  # build + deploy can be slow
 
 
 def collect_reply_text(chunks):
@@ -22,10 +23,15 @@ def collect_reply_text(chunks):
     return "".join(chunks).strip()
 
 
-def _build_client():
+def permission_kind(execute_mode):
+    """Chat mode denies edit approvals; execute mode (post-approval) allows them."""
+    return "allowed" if execute_mode else "denied"
+
+
+def _build_client(execute=False):
     """Construct the ACP client class lazily so the module imports without acp."""
     from acp.schema import (
-        RequestPermissionResponse, DeniedOutcome, ReadTextFileResponse,
+        RequestPermissionResponse, DeniedOutcome, AllowedOutcome, ReadTextFileResponse,
         WriteTextFileResponse, CreateTerminalResponse, TerminalOutputResponse,
         WaitForTerminalExitResponse, ReleaseTerminalResponse, TerminalExitStatus,
     )
@@ -34,6 +40,7 @@ def _build_client():
         def __init__(self):
             self.chunks = []
             self.denied = 0
+            self.execute = execute
 
         async def session_update(self, session_id, update, **kw):
             # Only capture the agent's own message text. Ignore user-message echoes
@@ -47,7 +54,13 @@ def _build_client():
                 self.chunks.append(text)
 
         async def request_permission(self, options, session_id, tool_call, **kw):
-            # Stage 1: deny everything (edits are handled in Stage 2 via cards).
+            # Chat mode denies (edits become cards). Execute mode (post-approval)
+            # auto-allows because the operator already approved the card.
+            if permission_kind(self.execute) == "allowed":
+                allow = next((o for o in options
+                              if "allow" in getattr(o, "option_id", "").lower()), options[0])
+                return RequestPermissionResponse(
+                    outcome=AllowedOutcome(option_id=allow.option_id, outcome="selected"))
             self.denied += 1
             return RequestPermissionResponse(outcome=DeniedOutcome(outcome="cancelled"))
 
@@ -89,14 +102,14 @@ def _build_client():
     return RelayChatClient
 
 
-async def _run_turn(profile, workspace, message, session_id, timeout):
+async def _run_turn(profile, workspace, message, session_id, timeout, execute=False):
     from acp import spawn_agent_process
     from acp.schema import ClientCapabilities, FileSystemCapabilities, TextContentBlock
 
     fs_fields = FileSystemCapabilities.model_fields.keys()
     fs_kwargs = {k: True for k in fs_fields if "read" in k or "write" in k}
     caps = ClientCapabilities(fs=FileSystemCapabilities(**fs_kwargs), terminal=True)
-    client = _build_client()()
+    client = _build_client(execute)()
 
     async with spawn_agent_process(client, HERMES, "-p", profile, "acp",
                                    cwd=workspace) as (conn, proc):
@@ -127,12 +140,15 @@ def main():
     ap.add_argument("--profile", required=True)
     ap.add_argument("--workspace", required=True)
     ap.add_argument("--session", default=None)
-    ap.add_argument("--timeout", type=float, default=180.0)
+    ap.add_argument("--execute", action="store_true",
+                    help="auto-approve edit permissions (post-approval execution)")
+    ap.add_argument("--timeout", type=float, default=None)
     args = ap.parse_args()
     message = sys.stdin.read()
+    timeout = args.timeout if args.timeout else (EXECUTE_TIMEOUT if args.execute else 180.0)
     try:
         reply, sid = asyncio.run(
-            _run_turn(args.profile, args.workspace, message, args.session, args.timeout))
+            _run_turn(args.profile, args.workspace, message, args.session, timeout, args.execute))
         print(json.dumps({"ok": True, "reply": reply, "session_id": sid}))
     except Exception as e:  # noqa: BLE001
         print(json.dumps({"ok": False, "error": repr(e)}))

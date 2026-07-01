@@ -16,3 +16,9 @@ def test_collect_reply_text_joins_and_strips():
     assert mod.collect_reply_text(["P", "ONG"]) == "PONG"
     assert mod.collect_reply_text(["  hi ", "there\n"]) == "hi there"
     assert mod.collect_reply_text([]) == ""
+
+
+def test_permission_kind_by_mode():
+    mod = _load()
+    assert mod.permission_kind(False) == "denied"
+    assert mod.permission_kind(True) == "allowed"
