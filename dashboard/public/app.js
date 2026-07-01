@@ -306,7 +306,7 @@ function renderChatPanel(){
   if(!el){ el = document.createElement('div'); el.id = 'chat-panel'; document.body.appendChild(el); }
   el.innerHTML = `<div class="chat-win" role="dialog" aria-label="Chat with Hermes">
     <div class="chat-head">
-      <span class="chat-head-ico">${svg('sparkle', 16, 1.9)}</span>
+      <span class="chat-head-ico"><img class="hermes-ico" src="/hermes-avatar.png" alt="Hermes"></span>
       <div class="chat-head-t"><div class="chat-title">Chat with Hermes</div><div class="chat-scope">${esc(chatScopeLabel())}</div></div>
       <button class="slideover-x" data-act="chatClose" aria-label="Close chat">${svg('logout', 15, 2)}</button>
     </div>
@@ -323,7 +323,7 @@ function renderChatBody(){
   const b = document.getElementById('chat-body');
   if(!b) return;
   if(!chat.messages.length && !chat.pending){
-    b.innerHTML = `<div class="chat-empty">${svg('sparkle', 22, 1.5)}<p>Ask Hermes about ${esc(chatScopeLabel())}. It reads your data, researches, and drafts. Anything actionable comes back as an approval card you tap, never a live change.</p></div>`;
+    b.innerHTML = `<div class="chat-empty"><img class="hermes-ico" src="/hermes-avatar.png" alt="Hermes"><p>Ask Hermes about ${esc(chatScopeLabel())}. It reads your data, researches, and drafts. Anything actionable comes back as an approval card you tap, never a live change.</p></div>`;
     return;
   }
   const rows = chat.messages.map(m => {
@@ -343,7 +343,7 @@ async function chatSend(text){
   chat.pending = true;
   renderChatBody();
   try {
-    const res = await fetch('/api/chat/messages', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ client_id: state.client, body: text }) });
+    const res = await fetch('/api/chat/messages', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ client_id: state.client, section: state.section, body: text }) });
     if(res.status === 401){ state.account = null; state.data = null; renderLogin(); return; }
     if(!res.ok) throw new Error('HTTP ' + res.status);
     await chatFetch();
@@ -425,7 +425,7 @@ function renderTopbar(){
     <div class="client-pills">${pills.join('')}</div>
     <div class="topbar-right">
       <span class="refreshed">${esc(stamp)}</span>
-      ${CHAT_UI_ENABLED ? `<button class="icon-btn chat-toggle" data-act="chatOpen" title="Chat with Hermes">${svg('sparkle', 17, 1.8)}</button>` : ''}
+      ${CHAT_UI_ENABLED ? `<button class="icon-btn chat-toggle" data-act="chatOpen" title="Chat with Hermes"><img class="hermes-ico" src="/hermes-avatar.png" alt="Hermes"></button>` : ''}
       <button class="icon-btn" data-act="noop" title="Notifications">${svg('bell', 17, 1.8)}<span class="dot-badge"></span></button>
       <div class="avatar-wrap">
         <button class="avatar avatar-btn" data-act="avatarMenu" aria-haspopup="true" aria-label="Account menu">${esc(initial)}</button>

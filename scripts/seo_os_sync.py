@@ -201,11 +201,12 @@ VENV_PY = os.environ.get("HERMES_VENV_PY", "/usr/local/lib/hermes-agent/venv/bin
 ACP_CHAT_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "acp_chat.py")
 
 
-def compose_chat_prompt(body: str, client_name) -> str:
+def compose_chat_prompt(body: str, client_name, section=None) -> str:
     scope = f'the client "{client_name}"' if client_name else "all clients (orchestrator overview)"
+    where = f" They are currently viewing the '{section}' section of the dashboard, so prefer answers relevant to what they are looking at." if section else ""
     return (
         "You are answering the operator inside the SEO OS dashboard chat. "
-        f"Scope: {scope}. You may read, research, and draft. You CANNOT publish, deploy, "
+        f"Scope: {scope}.{where} You may read, research, and draft. You CANNOT publish, deploy, "
         "redirect, change canonicals/noindex, delete, or send outreach. If you want to take an "
         "actionable step, DO NOT do it; instead end your reply with a fenced code block tagged "
         "'proposal' containing a JSON array, each item with keys: title, type, risk "
@@ -441,8 +442,9 @@ def apply_command(conn: sqlite3.Connection, cmd: dict) -> dict:
             profile = profile or "default"
             workspace = cwd or "/root"
             prior_sid = get_acp_session_id(conn, session_key)
+            section = payload.get("section")
             reply, new_sid = run_acp_chat(
-                profile, workspace, compose_chat_prompt(body, client_name), prior_sid)
+                profile, workspace, compose_chat_prompt(body, client_name, section), prior_sid)
             if new_sid:
                 set_acp_session_id(conn, session_key, new_sid)
                 conn.commit()
