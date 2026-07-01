@@ -217,7 +217,10 @@ def compose_chat_prompt(body: str, client_name, section=None) -> str:
         "actionable step, DO NOT do it; instead end your reply with a fenced code block tagged "
         "'proposal' containing a JSON array, each item with keys: title, type, risk "
         "(low|medium|high), requested_action, evidence, source_url, production_gate, "
-        "agent_confidence. Omit the block entirely if there is nothing to propose.\n\n"
+        "agent_confidence. Omit the block entirely if there is nothing to propose. "
+        "Approving a proposal will EXECUTE it (including a production deploy if your "
+        "requested_action implies one), so make requested_action complete and unambiguous, "
+        "and set risk/production_gate to reflect whether it goes live.\n\n"
         f"Operator: {body}"
     )
 
