@@ -36,6 +36,11 @@ def _build_client():
             self.denied = 0
 
         async def session_update(self, session_id, update, **kw):
+            # Only capture the agent's own message text. Ignore user-message echoes
+            # and thought chunks, and (with the pre-prompt reset below) any history
+            # replayed by session/load.
+            if getattr(update, "session_update", None) != "agent_message_chunk":
+                return
             content = getattr(update, "content", None)
             text = getattr(content, "text", None) if content is not None else None
             if text:
@@ -108,6 +113,8 @@ async def _run_turn(profile, workspace, message, session_id, timeout):
         else:
             sess = await asyncio.wait_for(conn.new_session(cwd=workspace), timeout=60)
             sid = sess.session_id
+        # Reset so we only return THIS turn's reply, not any history replayed by load.
+        client.chunks = []
         await asyncio.wait_for(
             conn.prompt(prompt=[TextContentBlock(type="text", text=message)],
                         session_id=sid),
