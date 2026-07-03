@@ -12,9 +12,10 @@ Out:  one JSON line: {"ok": true, "reply": "...", "session_id": "..."}
 import argparse
 import asyncio
 import json
+import shutil
 import sys
 
-HERMES = "/root/.local/bin/hermes"
+HERMES = shutil.which("hermes") or "/root/.local/bin/hermes"
 EXECUTE_TIMEOUT = 900  # build + deploy can be slow
 
 
