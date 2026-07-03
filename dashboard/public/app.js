@@ -206,7 +206,7 @@ function toast(msg, tone = 'slate'){
 }
 
 /* ---------- approval decision (POST /api/approvals/:id/decision) ---------- */
-async function decide(id, decision, btn){
+async function decide(id, decision, btn, editedReply){
   // optimistic: replace the card's actions with a "queued" pill so the operator sees
   // instant feedback even though Hermes applies the decision asynchronously on the VPS.
   const card = btn && btn.closest('.appr-card');
@@ -221,7 +221,7 @@ async function decide(id, decision, btn){
   try {
     const res = await fetch(`/api/approvals/${encodeURIComponent(id)}/decision`, {
       method:'POST', headers:{ 'content-type':'application/json' },
-      body: JSON.stringify({ decision, note:'' })
+      body: JSON.stringify({ decision, note:'', edited_reply: editedReply || undefined })
     });
     if(res.status === 401){ state.account = null; state.data = null; renderLogin(); return; }
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -1009,23 +1009,92 @@ function viewCtr(){
 }
 
 /* =====================================================================
-   VIEW: Reviews (on-brand placeholder / not-connected state)
+   VIEW: Reviews (KPIs, feed, inline draft approve/edit)
    ===================================================================== */
+function reviewsFor(d){
+  const rows = d.reviews || [];
+  return state.client === 'all' ? rows : rows.filter(r => r.client_id === state.client);
+}
+function starRow(rating){
+  let s = '<span class="stars">';
+  for(let i=1;i<=5;i++) s += `<span class="${i<=rating?'':'off'}">★</span>`;
+  return s + '</span>';
+}
+/* kpiCard escapes both `value` and `sub` (they go through esc()), so the HTML
+   produced by starRow() can't be passed into it: it would render as literal
+   angle-bracket text instead of styled stars. This plain-text variant (just
+   the ★/☆ characters, no markup) is safe to pass through esc() untouched. */
+function starText(rating){
+  const r = Math.round(rating);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+}
+function reviewTrend(){ return ''; }
+function reviewThemes(){ return ''; }
+function reviewCard(r, showClient){
+  const initials = esc(r.reviewer.split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase());
+  const toneBg = r.rating >= 4 ? '#1F7A43' : (r.rating >= 3 ? '#8A6314' : '#9E2B20');
+  const statusBadge = r.reply_status === 'replied' ? badge('Replied','green')
+    : r.reply_status === 'draft_ready' ? badge('Draft ready','amber') : badge('Needs reply','amber');
+  const tags = (r.themes || '').split(',').filter(Boolean).map(t => `<span class="tag">${esc(t.trim())}</span>`).join('');
+  let body = '';
+  if(r.reply_status === 'replied'){
+    body = `<div class="reply"><div class="rl">Your reply</div><p>${esc(r.reply_text)}</p></div>`;
+  } else if(r.reply_status === 'draft_ready'){
+    body = `<div class="draft" data-approval="${esc(r.approval_id || '')}">
+      <div class="dl">${svg('sparkle',13,2)} Hermes drafted this reply</div>
+      <p class="draft-text">${esc(r.reply_text)}</p>
+      <div class="draft-actions">
+        <button class="btn primary" data-act="revApprove" data-val="${esc(r.approval_id || '')}">Approve reply</button>
+        <button class="btn" data-act="revEdit">Edit reply</button>
+      </div>
+      <div class="learn-note">${svg('edit',12,2)} Your edits teach Hermes your voice. The next draft sounds more like you.</div>
+    </div>`;
+  } else {
+    body = `<div class="waiting">${svg('clock',13,2)} Hermes will draft a reply on its next pass.</div>`;
+  }
+  return `<div class="card rev">
+    <div class="rev-head">
+      <div class="avat" style="background:${toneBg}">${initials}</div>
+      <div class="rev-who">
+        <div class="rev-name">${esc(r.reviewer)}${showClient ? ` <span class="tag">${esc(clientName(r.client_id))}</span>` : ''}</div>
+        <div class="rev-meta">${starRow(r.rating)} · ${esc((r.published_at || '').slice(0,10))} · ${esc(label(r.source))}</div>
+      </div>
+      ${statusBadge}
+    </div>
+    <p class="rev-text">${esc(r.text)}</p>
+    ${tags ? `<div class="tags">${tags}</div>` : ''}
+    ${body}
+  </div>`;
+}
 function viewReviews(){
   const d = state.data;
-  const connected = (d.visible_clients || []).filter(c => c.zernio_status === 'connected');
-  const who = state.client === 'all' ? 'No client here' : clientName(state.client);
-  const lead = connected.length
-    ? `<div class="card lead-card"><span class="lead-icon green">${svg('star', 24, 1.7)}</span><div><h2>${esc(connected.map(c => c.name).join(', '))} ready for review monitoring</h2><p>A Google Business Profile is connected. The live reviews feed and reply drafting ship in a later milestone.</p></div></div>`
-    : `<div class="card lead-card"><span class="lead-icon slate">${svg('star', 24, 1.7)}</span><div><h2>${esc(who)} has no Google Business Profile connected</h2><p>Review handling activates for local-business clients with a connected GBP (via Zernio or another integration). Connect a profile in Settings to let Hermes monitor and draft review replies.</p></div></div>`;
-
-  return pageTitle('Review Management', 'When a client has a Google Business Profile, Hermes monitors new reviews daily and drafts replies. Positive reviews post automatically from an approved template; negative and neutral reviews are held for your approval.')
-    + lead
-    + `<div class="section-label">How Hermes handles reviews</div>
-    <div class="how-grid">
-      <div class="card how-card"><div style="display:flex;align-items:center;gap:8px"><span class="stars">★★★★★</span>${badge('Auto-eligible', 'green')}</div><h3>Positive review</h3><p>Thank them, mention the service naturally, and invite them back. Posts automatically from an approved template.</p></div>
-      <div class="card how-card"><div style="display:flex;align-items:center;gap:8px"><span class="stars">★★★☆☆</span>${badge('Needs approval', 'amber')}</div><h3>Negative or neutral review</h3><p>Acknowledge the experience, thank them, and ask them to contact the owner directly. Never argue or admit fault, always reviewed before posting.</p></div>
-    </div>`;
+  const rows = reviewsFor(d);
+  if(!rows.length){
+    return pageTitle('Review Management', 'Hermes watches each connected Google Business Profile, clusters what customers mention, and drafts a reply for every review that has none. Nothing posts without your approval.')
+      + `<div class="card lead-card"><span class="lead-icon slate">${svg('star', 24, 1.7)}</span><div><h2>No reviews yet for this view</h2><p>Reviews activate when this client's agent is connected to a Google Business Profile (postproxy.dev) and starts writing reviews to its SEO OS database. See HERMES-INTEGRATION.md for the wiring.</p></div></div>`;
+  }
+  const total = rows.length;
+  const replied = rows.filter(r => r.reply_status === 'replied').length;
+  const needs = total - replied;
+  const drafts = rows.filter(r => r.reply_status === 'draft_ready').length;
+  const avg = (rows.reduce((a,r) => a + r.rating, 0) / total);
+  const dist = [5,4,3,2,1].map(n => rows.filter(r => r.rating === n).length);
+  const distMax = Math.max(...dist, 1);
+  const distCard = `<div class="card kpi"><div class="kpi-label">Rating breakdown</div><div class="dist">${
+    [5,4,3,2,1].map((n,i) => `<div class="dr"><b>${n}</b><span class="tr"><span class="fl${n<=2?' low':''}" style="width:${Math.round(dist[i]/distMax*100)}%"></span></span><span class="n">${dist[i]}</span></div>`).join('')
+  }</div></div>`;
+  const feed = rows.map(r => reviewCard(r, state.client === 'all')).join('');
+  return pageTitle('Review Management', 'Hermes watches each connected Google Business Profile, clusters what customers mention, and drafts a reply for every review that has none. Nothing posts without your approval.')
+    + `<div class="kpi-grid kpi-grid-5">`
+    + kpiCard('Average rating', avg.toFixed(1), 'green', starText(avg), 'green', 'star')
+    + kpiCard('Total reviews', total, 'blue', `${rows.filter(r => (r.published_at||'') > new Date(Date.now()-30*864e5).toISOString()).length} new this month`, 'slate', 'trend')
+    + kpiCard('Response rate', total ? Math.round(replied/total*100) + '%' : '0%', 'green', `${replied} of ${total} replied`, replied === total ? 'green' : 'slate', 'shield')
+    + kpiCard('Needs reply', needs, needs ? 'amber' : 'green', drafts ? `${drafts} drafts ready for approval` : 'all caught up', needs ? 'amber' : 'green', 'edit')
+    + distCard
+    + `</div>`
+    + reviewTrend(rows)
+    + reviewThemes(rows)
+    + `<div class="section-label">Reviews · newest first</div><div class="feed">${feed}</div>`;
 }
 
 /* =====================================================================
@@ -1150,6 +1219,36 @@ document.addEventListener('click', e => {
     case 'avatarMenu': if(menu) menu.hidden = !menu.hidden; break;
     case 'logout': doLogout(); break;
     case 'decision': decide(id, val, t); break;
+    case 'revApprove': {
+      const draft = t.closest('.draft');
+      const ta = draft ? draft.querySelector('textarea') : null;
+      const edited = ta ? ta.value.trim() : '';
+      decide(t.dataset.val, 'approved', t, edited || undefined);
+      break;
+    }
+    case 'revEdit': {
+      const draft = t.closest('.draft');
+      if(draft.querySelector('textarea')) break;
+      const p = draft.querySelector('.draft-text');
+      const ta = document.createElement('textarea');
+      ta.className = 'draft-editor'; ta.value = p.textContent; ta.dataset.orig = p.textContent;
+      p.replaceWith(ta); ta.focus();
+      t.textContent = 'Cancel'; t.dataset.act = 'revCancel';
+      const ap = draft.querySelector('[data-act="revApprove"]');
+      if(ap) ap.textContent = 'Approve edited reply';
+      break;
+    }
+    case 'revCancel': {
+      const draft = t.closest('.draft');
+      const ta = draft.querySelector('textarea');
+      const p = document.createElement('p');
+      p.className = 'draft-text'; p.textContent = ta.dataset.orig || ta.defaultValue;
+      ta.replaceWith(p);
+      t.textContent = 'Edit reply'; t.dataset.act = 'revEdit';
+      const ap = draft.querySelector('[data-act="revApprove"]');
+      if(ap) ap.textContent = 'Approve reply';
+      break;
+    }
     case 'telegram': console.log('[SEO OS] send to Telegram (wiring is a later milestone):', id); break;
     case 'noop': console.log('[SEO OS] action not wired yet'); break;
     case 'copySetup': {
