@@ -66,6 +66,8 @@ const state = {
   client:'all',
   apprFilter:'All',
   oppFilter:'All',
+  reviewRange:'12m',
+  reviewTheme:null,
   data:null,
   account:null,
 };
@@ -1028,8 +1030,100 @@ function starText(rating){
   const r = Math.round(rating);
   return '★'.repeat(r) + '☆'.repeat(5 - r);
 }
-function reviewTrend(){ return ''; }
-function reviewThemes(){ return ''; }
+function bucketReviews(rows, range){
+  const now = Date.now(), DAY = 864e5;
+  const cfg = range === '30d' ? { n:4, span:7*DAY, label:idx=>`Week ${idx+1}` }
+    : range === '12w' ? { n:12, span:7*DAY, label:idx=>`W${idx+1}` }
+    : { n:12, span:null, label:null };
+  const buckets = [];
+  if(cfg.span){
+    // idx 0 = oldest bucket, so "Week 1" is the earliest and the newest is last
+    for(let i=cfg.n-1;i>=0;i--){
+      const end = now - i*cfg.span, start = end - cfg.span;
+      buckets.push({ start, end, label: cfg.label(cfg.n-1-i) });
+    }
+  } else {
+    for(let i=11;i>=0;i--){
+      const d = new Date(now); d.setUTCDate(1); d.setUTCHours(0,0,0,0); d.setUTCMonth(d.getUTCMonth()-i);
+      const e = new Date(d); e.setUTCMonth(e.getUTCMonth()+1);
+      buckets.push({ start:d.getTime(), end:e.getTime(), label:d.toLocaleString('en',{month:'short',timeZone:'UTC'}) });
+    }
+  }
+  return buckets.map(b => {
+    const inB = rows.filter(r => { const t = new Date(r.published_at).getTime(); return t >= b.start && t < b.end; });
+    return { label:b.label, count:inB.length, rating: inB.length ? inB.reduce((a,r)=>a+r.rating,0)/inB.length : null };
+  });
+}
+function reviewTrend(rows){
+  const data = bucketReviews(rows, state.reviewRange);
+  const W = 800, PAD_L = 26, PAD_R = 8, GREEN = '#1F7A43', AMBER = '#A17015';
+  const n = data.length, slot = (W-PAD_L-PAD_R)/n, bw = Math.min(26, slot*0.45);
+  const maxC = Math.max(...data.map(d => d.count), 1);
+  // panel 1: bars
+  let bars = `<svg viewBox="0 0 ${W} 110" role="img" aria-label="Reviews received per period">`;
+  [0, maxC].forEach(v => { const y = 92 - (v/maxC)*80;
+    bars += `<line class="grid" x1="${PAD_L}" y1="${y}" x2="${W-PAD_R}" y2="${y}"/><text x="${PAD_L-6}" y="${y+3}" text-anchor="end">${v}</text>`; });
+  data.forEach((d,i) => {
+    const x = PAD_L + slot*i + (slot-bw)/2, h = (d.count/maxC)*80, y = 92 - h;
+    bars += d.count > 0
+      ? `<path fill="${GREEN}" d="M${x} 92 V${y+3} Q${x} ${y} ${x+3} ${y} H${x+bw-3} Q${x+bw} ${y} ${x+bw} ${y+3} V92 Z"><title>${esc(d.label)} · ${d.count} review${d.count===1?'':'s'}${d.rating?` · ${d.rating.toFixed(1)}★ avg`:''}</title></path>`
+      : `<rect x="${x}" y="90" width="${bw}" height="2" rx="1" fill="#DDE3E1"/>`;
+    if(i === n-1 && d.count > 0) bars += `<text class="dl" x="${x+bw/2}" y="${y-5}" text-anchor="middle">${d.count}</text>`;
+    bars += `<text x="${PAD_L+slot*i+slot/2}" y="106" text-anchor="middle">${esc(d.label)}</text>`;
+  });
+  bars += '</svg>';
+  // panel 2: rating line, fixed 1..5, gaps on empty buckets
+  const ry = v => 82 - ((v-1)/4)*72;
+  let line = `<svg viewBox="0 0 ${W} 100" role="img" aria-label="Average rating per period, scale 1 to 5">`;
+  [1,3,5].forEach(v => { const y = ry(v);
+    line += `<line class="grid" x1="${PAD_L}" y1="${y}" x2="${W-PAD_R}" y2="${y}"/><text x="${PAD_L-6}" y="${y+3}" text-anchor="end">${v}★</text>`; });
+  let seg = [], polys = '', last = null;
+  data.forEach((d,i) => {
+    const x = PAD_L + slot*i + slot/2;
+    if(d.rating === null){ if(seg.length > 1) polys += `<polyline fill="none" stroke="${AMBER}" stroke-width="2" points="${seg.join(' ')}"/>`; seg = []; return; }
+    seg.push(`${x},${ry(d.rating)}`); last = { x, y:ry(d.rating), r:d.rating };
+  });
+  if(seg.length > 1) polys += `<polyline fill="none" stroke="${AMBER}" stroke-width="2" points="${seg.join(' ')}"/>`;
+  line += polys;
+  data.forEach((d,i) => { if(d.rating === null) return; const x = PAD_L + slot*i + slot/2;
+    line += `<circle cx="${x}" cy="${ry(d.rating)}" r="4" fill="${AMBER}" stroke="#fff" stroke-width="2"><title>${esc(d.label)} · ${d.rating.toFixed(1)}★ avg of ${d.count}</title></circle>`; });
+  if(last) line += `<circle cx="${last.x}" cy="${last.y}" r="5.5" fill="${AMBER}" stroke="#fff" stroke-width="2"/><text class="dl" x="${last.x}" y="${last.y-9}" text-anchor="middle">${last.r.toFixed(1)}★</text>`;
+  line += '</svg>';
+  const chip = (id, lbl) => `<button class="rchip${state.reviewRange===id?' active':''}" data-act="revRange" data-val="${id}">${lbl}</button>`;
+  return `<div class="section-label trend-label">Review trend <span class="range-chips">${chip('30d','30 days')}${chip('12w','12 weeks')}${chip('12m','12 months')}</span></div>
+  <div class="card trend-card">
+    <div class="trend-panel"><div class="tp-title">Reviews received</div>${bars}</div>
+    <div class="trend-panel"><div class="tp-title">Average rating <span class="tp-hint">buckets with no reviews leave a gap</span></div>${line}</div>
+  </div>`;
+}
+function reviewThemes(rows){
+  const map = {};
+  rows.forEach(r => (r.themes||'').split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+    (map[t] = map[t] || { n:0, sum:0, latest:null }).n++;
+    map[t].sum += r.rating;
+    if(!map[t].latest || r.published_at > map[t].latest.published_at) map[t].latest = r;
+  }));
+  const themes = Object.entries(map).map(([name,v]) => ({ name, n:v.n, avg:v.sum/v.n, quote:v.latest ? v.latest.text.slice(0,90) : '' }))
+    .sort((a,b) => b.n - a.n);
+  if(!themes.length) return '';
+  const maxN = themes[0].n;
+  const tone = a => a >= 4 ? 'good' : (a >= 3 ? 'mid' : 'bad');
+  const best = themes.filter(t => t.avg >= 4).sort((a,b) => b.n - a.n)[0];
+  const worst = themes.slice().sort((a,b) => a.avg - b.avg)[0];
+  const insight = best && worst && worst.avg < best.avg
+    ? `<div class="theme-insight"><span class="ti-ico">${svg('sparkle',13,2)}</span>Customers praise <b>${esc(best.name)}</b> most. <b>${esc(worst.name)}</b> is the theme dragging the rating: ${worst.n} mention${worst.n===1?'':'s'} averaging ${worst.avg.toFixed(1)}★.</div>` : '';
+  const rowsHtml = themes.map(t => `<div class="theme-row" data-act="revTheme" data-val="${esc(t.name)}" role="button" title="Click to filter the feed">
+    <div class="th-name">${esc(t.name)}${t === worst && t.avg < 3 ? ' ' + badge('Biggest drag','red') : ''}</div>
+    <div class="th-bar"><span class="th-fill ${tone(t.avg)}" style="width:${Math.round(t.n/maxN*100)}%"></span></div>
+    <div class="th-n">${t.n} mention${t.n===1?'':'s'}</div>
+    <div class="th-rate ${tone(t.avg)}">${t.avg.toFixed(1)}★</div>
+    <div class="th-quote">"${esc(t.quote)}"</div>
+  </div>`).join('');
+  return `<div class="section-label">Themes customers mention</div>
+  <div class="card themes-card">${insight}${rowsHtml}
+    <div class="chip-hint">Bar length = how often the theme comes up. Color = how those reviews rate you. Click a row to filter the feed below.</div>
+  </div>`;
+}
 function reviewCard(r, showClient){
   const initials = esc(r.reviewer.split(/\s+/).map(w => w[0]).join('').slice(0,2).toUpperCase());
   const toneBg = r.rating >= 4 ? '#1F7A43' : (r.rating >= 3 ? '#8A6314' : '#9E2B20');
@@ -1083,7 +1177,9 @@ function viewReviews(){
   const distCard = `<div class="card kpi"><div class="kpi-label">Rating breakdown</div><div class="dist">${
     [5,4,3,2,1].map((n,i) => `<div class="dr"><b>${n}</b><span class="tr"><span class="fl${n<=2?' low':''}" style="width:${Math.round(dist[i]/distMax*100)}%"></span></span><span class="n">${dist[i]}</span></div>`).join('')
   }</div></div>`;
-  const feed = rows.map(r => reviewCard(r, state.client === 'all')).join('');
+  const feedRows = state.reviewTheme ? rows.filter(r => (r.themes||'').split(',').map(t=>t.trim()).includes(state.reviewTheme)) : rows;
+  const feed = feedRows.map(r => reviewCard(r, state.client === 'all')).join('');
+  const filterNote = state.reviewTheme ? `<div class="chip-hint">Showing reviews mentioning <b>${esc(state.reviewTheme)}</b> · <button class="link-action" data-act="revTheme" data-val="">clear</button></div>` : '';
   return pageTitle('Review Management', 'Hermes watches each connected Google Business Profile, clusters what customers mention, and drafts a reply for every review that has none. Nothing posts without your approval.')
     + `<div class="kpi-grid kpi-grid-5">`
     + kpiCard('Average rating', avg.toFixed(1), 'green', starText(avg), 'green', 'star')
@@ -1094,7 +1190,7 @@ function viewReviews(){
     + `</div>`
     + reviewTrend(rows)
     + reviewThemes(rows)
-    + `<div class="section-label">Reviews · newest first</div><div class="feed">${feed}</div>`;
+    + `<div class="section-label">Reviews · newest first</div>${filterNote}<div class="feed">${feed}</div>`;
 }
 
 /* =====================================================================
@@ -1249,6 +1345,8 @@ document.addEventListener('click', e => {
       if(ap) ap.textContent = 'Approve reply';
       break;
     }
+    case 'revRange': { state.reviewRange = t.dataset.val; renderApp(); break; }
+    case 'revTheme': { const v = t.dataset.val || null; state.reviewTheme = (state.reviewTheme === v) ? null : v; renderApp(); break; }
     case 'telegram': console.log('[SEO OS] send to Telegram (wiring is a later milestone):', id); break;
     case 'noop': console.log('[SEO OS] action not wired yet'); break;
     case 'copySetup': {
