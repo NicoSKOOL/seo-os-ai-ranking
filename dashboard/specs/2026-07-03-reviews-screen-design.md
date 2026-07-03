@@ -165,9 +165,11 @@ normal approval cards (title = "Reply to <reviewer> (<rating> stars) -
 
 ## 4. Demo seed data
 
-`dashboard/src/db/seed-demo.sql` gains about 14 reviews across the existing
-demo clients, all `acct_demo`, plus 4 matching `approval_requests` rows
-(type `review_reply`, status `needs_review`):
+`dashboard/src/db/seed-demo.sql` gains 14 reviews on the local-business demo
+client (`demo-local`, the roofing company), all `acct_demo`, plus 3 matching
+`approval_requests` rows (type `review_reply`, status `needs_review`, one
+per draft). The other demo clients keep zero reviews so the empty state is
+visible. Review content is roofing-flavored to match the client:
 
 - Ratings mixed to read realistically: mostly 5s and 4s, a few 3s, two 1-2
   star.
