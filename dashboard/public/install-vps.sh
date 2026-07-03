@@ -71,7 +71,7 @@ while true; do
   read -rp "  Domain (example.com): " CDOMAIN
   read -rp "  Hermes profile for this client: " CPROFILE
   read -rp "  Workspace folder on this VPS: " CWORKSPACE
-  CID=$(echo "$CDOMAIN" | tr -c 'a-z0-9' '-' | sed 's/-*$//;s/^-*//')
+  CID=$(echo "$CDOMAIN" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9' '-' | sed 's/-*$//;s/^-*//')
   python3 - "$DB_PATH" "$CID" "$CNAME" "$CDOMAIN" "$CPROFILE" "$CWORKSPACE" <<'PYEOF'
 import sqlite3, sys, datetime
 db = sqlite3.connect(sys.argv[1]); now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
