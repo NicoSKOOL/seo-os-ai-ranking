@@ -27,6 +27,9 @@ client id and data.
 `id, name, domain, role, status, health_score, hermes_profile,
 telegram_topic, gsc_status, ga4_status, repo_status, zernio_status,
 workspace, archived_at, created_at, updated_at`
+(`archived_at` is hosted-side only: it lives in the Cloudflare D1 schema, not
+in `dashboard/db/local-schema.sql`. Don't write it from the VPS; the bridge
+will simply never sync a value for it.)
 
 **Example:**
 
