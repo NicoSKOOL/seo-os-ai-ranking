@@ -33,6 +33,7 @@ DASH_URL=${DASH_URL%/}
 
 say "Checking prerequisites"
 command -v python3 >/dev/null || die "python3 is required."
+PY3=$(command -v python3)
 command -v systemctl >/dev/null || die "systemd is required."
 command -v hermes >/dev/null || die "Hermes not found on PATH. Install Hermes v0.17+ first."
 HERMES_BIN=$(command -v hermes)
@@ -107,7 +108,7 @@ After=network-online.target
 [Service]
 Type=simple
 EnvironmentFile=$ENV_FILE
-ExecStart=/usr/bin/python3 /root/seo_os_sync.py --interval 120
+ExecStart=$PY3 /root/seo_os_sync.py --interval 120
 Restart=always
 RestartSec=10
 
