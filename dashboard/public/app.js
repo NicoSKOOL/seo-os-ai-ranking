@@ -158,6 +158,8 @@ async function boot(){
       state.account = data.account;
       await load('all');
     } else {
+      const setup = await fetch('/api/setup').then(r => r.json()).catch(() => ({setup_needed:false}));
+      if(setup.setup_needed){ renderSetup(); return; }
       renderLogin();
     }
   } catch (err) {
@@ -374,6 +376,46 @@ function renderLogin(){
   if(email) email.focus();
 }
 
+/* ---------- first-boot setup wizard ---------- */
+function renderSetup(){
+  const app = $('#app');
+  app.className = '';
+  app.innerHTML = `<div class="login-screen">
+    <div class="card login-card">
+      <div class="login-brand">${BRAND_LOGO}<div class="b-text"><span class="login-name">SEO OS</span><span class="login-sub">First-time setup</span></div></div>
+      <p class="login-hint">Welcome! Your dashboard is deployed. Create the operator account to claim it.</p>
+      <form id="setup-form" class="login-form" novalidate>
+        <label class="field"><span class="field-label">Workspace name</span><input id="setup-name" class="input" type="text" placeholder="My SEO OS"></label>
+        <label class="field"><span class="field-label">Email</span><input id="setup-email" class="input" type="email" autocomplete="email" placeholder="you@example.com" autofocus></label>
+        <label class="field"><span class="field-label">Password (8+ characters)</span><input id="setup-password" class="input" type="password" autocomplete="new-password"></label>
+        <label class="field"><span class="field-label">Repeat password</span><input id="setup-password2" class="input" type="password" autocomplete="new-password"></label>
+        <button id="setup-btn" class="login-btn" type="submit">Create my dashboard</button>
+        <div id="setup-error" class="login-error" role="alert" style="display:none"></div>
+      </form>
+    </div>
+  </div>`;
+  const name = document.getElementById('setup-name');
+  if(name) name.focus();
+}
+
+function renderSetupDone(res){
+  const app = $('#app');
+  app.className = '';
+  app.innerHTML = `<div class="login-screen">
+    <div class="card login-card">
+      <div class="login-brand">${BRAND_LOGO}<div class="b-text"><span class="login-name">SEO OS</span><span class="login-sub">One step left</span></div></div>
+      <p class="login-hint"><strong>Save your agent token now.</strong> It is shown only once. Your VPS uses it to talk to this dashboard.</p>
+      <label class="field"><span class="field-label">Agent token</span>
+        <div class="copy-row"><code id="setup-token">${esc(res.agent_token)}</code>
+        <button class="btn" data-act="copySetup" data-target="setup-token">Copy</button></div></label>
+      <label class="field"><span class="field-label">Run this ONE command on your VPS (as root)</span>
+        <div class="copy-row"><code id="setup-cmd">${esc(res.install_command)}</code>
+        <button class="btn" data-act="copySetup" data-target="setup-cmd">Copy</button></div></label>
+      <button class="login-btn" data-act="setupContinue">I saved both, open my dashboard</button>
+    </div>
+  </div>`;
+}
+
 /* =====================================================================
    SHELL: sidebar + topbar + context bar
    ===================================================================== */
@@ -404,7 +446,29 @@ function renderSidebar(){
       <div class="ss-bar"><i style="width:${pct}%"></i></div>
       <div class="ss-line"><span class="ss-dot"></span><span class="ss-text">Hermes ${healthy ? 'online' : 'needs attention'} · ${onTime} / ${jobs.length} jobs on time</span></div>
     </div>
+    <div class="sidebar-version" id="sidebar-version">${versionInfo ? versionInfo.html : ''}</div>
   </aside>`;
+}
+
+/* ---------- version footer + update check (fetched once per page load; cached
+   so re-renders from nav clicks don't wipe the sidebar footer or re-fetch) ---------- */
+let versionInfo = null;
+function checkVersion(){
+  if(versionInfo) return;
+  fetch('/api/health').then(r => r.json()).then(async h => {
+    if(!h.version) return;
+    versionInfo = { html: 'v' + esc(h.version) };
+    const el = document.getElementById('sidebar-version');
+    if(el) el.innerHTML = versionInfo.html;
+    try {
+      const up = (await (await fetch('https://raw.githubusercontent.com/NicoSKOOL/seo-os-ai-ranking/main/VERSION')).text()).trim();
+      if(up && up !== h.version){
+        versionInfo.html = 'v' + esc(h.version) + ' &middot; <a href="https://github.com/NicoSKOOL/seo-os-ai-ranking/blob/main/UPDATING.md" target="_blank" rel="noopener">Update available (v' + esc(up) + ')</a>';
+        const el2 = document.getElementById('sidebar-version');
+        if(el2) el2.innerHTML = versionInfo.html;
+      }
+    } catch (e) { /* offline or blocked: stay silent */ }
+  }).catch(() => {});
 }
 
 function renderTopbar(){
@@ -1052,6 +1116,7 @@ function renderApp(){
   app.className = '';
   const view = (VIEWS[state.section] || viewCommandCenter)();
   app.innerHTML = `<div class="app">${renderSidebar()}<div class="main"><header class="topbar">${renderTopbar()}</header><div class="workspace">${view}</div></div></div>`;
+  checkVersion();
 }
 
 /* ---------- delegated events (bound once) ---------- */
@@ -1084,6 +1149,12 @@ document.addEventListener('click', e => {
     case 'decision': decide(id, val, t); break;
     case 'telegram': console.log('[SEO OS] send to Telegram (wiring is a later milestone):', id); break;
     case 'noop': console.log('[SEO OS] action not wired yet'); break;
+    case 'copySetup': {
+      const target = document.getElementById(t.dataset.target);
+      if(target && navigator.clipboard) navigator.clipboard.writeText(target.textContent || '').catch(() => {});
+      break;
+    }
+    case 'setupContinue': location.reload(); break;
   }
 });
 
@@ -1105,6 +1176,29 @@ document.addEventListener('submit', async e => {
     const text = input ? input.value : '';
     if(input) input.value = '';
     chatSend(text);
+    return;
+  }
+  if(e.target && e.target.id === 'setup-form'){
+    e.preventDefault();
+    const err = document.getElementById('setup-error');
+    err.style.display = 'none';
+    const p1 = document.getElementById('setup-password').value || '';
+    const p2 = document.getElementById('setup-password2').value || '';
+    if(p1 !== p2){ err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
+    const btn = document.getElementById('setup-btn');
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Creating...';
+    try {
+      const res = await fetch('/api/setup', { method:'POST', headers:{ 'content-type':'application/json' },
+        body: JSON.stringify({ name: document.getElementById('setup-name').value,
+          email: document.getElementById('setup-email').value, password: p1 }) });
+      const data = await res.json();
+      if(!res.ok){ err.textContent = data.error || 'Setup failed.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = orig; return; }
+      renderSetupDone(data);
+    } catch(_){
+      err.textContent = 'Could not reach the server, please try again.'; err.style.display = 'block';
+      btn.disabled = false; btn.textContent = orig;
+    }
     return;
   }
   if(!e.target || e.target.id !== 'login-form') return;

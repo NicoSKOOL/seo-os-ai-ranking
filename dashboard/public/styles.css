@@ -35,6 +35,9 @@ body{
 .login-btn:hover{background:#166337;border-color:#166337;}
 .login-btn:disabled{opacity:0.7;cursor:default;}
 .login-error{font-size:12.5px;font-weight:600;color:#9E2B20;line-height:1.4;}
+.login-hint{font-size:13px;color:#5A6968;line-height:1.5;margin:0 0 18px;}
+.copy-row{display:flex;align-items:center;gap:8px;}
+.copy-row code{flex:1;min-width:0;word-break:break-all;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;background:#F4F6F8;border:1px solid #E4E8E6;border-radius:8px;padding:8px 10px;color:#1A2322;}
 
 /* ---------- avatar menu ---------- */
 .avatar-wrap{position:relative;}
@@ -81,6 +84,10 @@ body{
 .sys-status .ss-line{display:flex;align-items:center;gap:7px;margin-top:11px;}
 .sys-status .ss-dot{width:7px;height:7px;border-radius:9999px;background:#34D399;box-shadow:0 0 0 3px rgba(52,211,153,0.18);flex-shrink:0;}
 .sys-status .ss-text{font-size:11.5px;color:#94A3B8;}
+
+.sidebar-version{margin-top:10px;padding:0 4px;font-size:10.5px;color:#64748B;line-height:1.5;}
+.sidebar-version a{color:#7FCF9A;font-weight:600;text-decoration:none;}
+.sidebar-version a:hover{text-decoration:underline;}
 
 /* ---------- topbar ---------- */
 .topbar{background:#fff;border-bottom:1px solid #E4E8E6;flex-shrink:0;}
