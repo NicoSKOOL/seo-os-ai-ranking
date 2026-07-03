@@ -84,6 +84,19 @@ Rejection or request-changes on a `review_reply` card behaves like any other
 approval (status flips, no command); the review row returns to
 `needs_reply` and clears `approval_id` so the agent can draft again later.
 
+**Edited approvals and the learning loop.** The decision endpoint accepts an
+optional `edited_reply` field on approve. When present, the Worker stores the
+edited text as the review's `reply_text` (the original draft is preserved on
+the approval row's proposal field, so the pair survives), and the enqueued
+command payload carries BOTH the original draft and the edited text. In this
+milestone that is the entire mechanism: the schema and payload make the
+(draft, edit) pair available. The agent-side learning behavior belongs to
+the wire-it-live milestone: the bridge hands the pair to the client's agent,
+whose instructions tell it to keep a running reply-style note in its
+workspace (tone, sign-off, phrases the operator removes) and to read that
+note before drafting future replies. The UI already sets the expectation
+with the "your edits teach Hermes your voice" note.
+
 ## 3. UI: `viewReviews()` rewrite in `dashboard/public/app.js`
 
 Respects the existing client selector (`state.client`), like every screen.
@@ -96,24 +109,39 @@ Layout, top to bottom:
    total reviews, response rate percent (replied / total), needs-reply
    count (amber when nonzero). The last card in the same row is a compact
    5-to-1 rating distribution (five horizontal bars with counts).
-2. **Themes customers mention**: chips aggregated from `themes` tags. Each
+2. **Review trend**: a card with a period selector (chips: 30 days, 12
+   weeks, 12 months; default 12 months) and two stacked panels sharing one
+   time axis, computed client-side from the review rows. Top panel: reviews
+   received per bucket as bars (brand green `#1F7A43`, rounded data-end,
+   zero buckets drawn as a faint baseline tick). Bottom panel: average
+   rating per bucket as a 2px line (`#A17015`, a darkened star amber chosen
+   because the base `#D9A021` fails 3:1 contrast on the light surface) with
+   dot markers, fixed 1-to-5 scale, gaps where a bucket has no reviews, and
+   the latest point emphasized with a direct label. Explicitly NOT one
+   dual-axis chart: count and rating are different scales, so they get
+   separate panels over the same axis. Buckets: weekly for 30 days and 12
+   weeks, monthly for 12 months. Hovering a bar or marker shows a tooltip
+   with period, count, and average rating.
+3. **Themes customers mention**: chips aggregated from `themes` tags. Each
    chip shows tag, review count, and that tag's average rating; chip tone by
    average rating (green at 4.0 or above, amber 3.0 to 3.9, red below 3.0).
    Sorted by count descending. Clicking a chip filters the feed to that
    theme (client-side state only); clicking again clears the filter.
-3. **Review feed**: newest first. Each card shows reviewer, star rating,
+4. **Review feed**: newest first. Each card shows reviewer, star rating,
    relative date, review text, small theme tags, and a status badge
    (`Replied` green, `Draft ready` amber, `Needs reply` amber). Replied
    cards show the posted reply in a collapsed, muted block ("Your reply").
    Cards with `draft_ready` show a highlighted draft block titled "Hermes
    drafted this reply" with the draft text and two buttons: **Approve**
    (primary; calls the decision endpoint for `approval_id`, then refreshes
-   data; card flips to "Approved, queued for Hermes" state) and **Edit**
-   (opens the existing approval card in the Approvals view for this row,
-   where request-changes lives; no new editor is built in this milestone).
-   Cards with `needs_reply` and no draft show a muted "Hermes will draft a
-   reply on its next pass" note.
-4. **Empty state**: a client with no review rows keeps a lead card similar
+   data; card flips to "Approved, queued for Hermes" state) and **Edit
+   reply** (turns the draft text into a textarea in place, with "Approve
+   edited reply" and "Cancel"; approving sends the edited text with the
+   decision). Under the draft block, a small note: "Your edits teach Hermes
+   your voice. The next draft sounds more like you." Cards with
+   `needs_reply` and no draft show a muted "Hermes will draft a reply on
+   its next pass" note.
+5. **Empty state**: a client with no review rows keeps a lead card similar
    to today's placeholder, explaining that reviews activate when the
    client's agent is connected to a Google Business Profile (postproxy.dev)
    and pointing at HERMES-INTEGRATION.md. The current explainer content
@@ -154,6 +182,12 @@ demo clients, all `acct_demo`, plus 4 matching `approval_requests` rows
 - Approve one draft inline end to end on local dev: decision endpoint 200,
   approval flips, review row flips to replied, response-rate KPI updates
   after refresh, and the same card is gone from the Approvals inbox.
+- Edit a draft inline, approve the edited version: the review's reply_text
+  is the edited text, the approval keeps the original draft in its proposal
+  field, and the enqueued command payload contains both texts.
+- Trend card: all three period chips render, buckets and averages match the
+  seed rows (hand-check one bucket), rating line breaks over empty buckets,
+  tooltips appear on hover.
 - Confirm the same draft appeared in the Approvals inbox before approving.
 - `npx tsc --noEmit`, `node --check app.js`, full pytest suite (drift tests
   unaffected), and the Task 3 style check that a fresh db builds 0001+0002
@@ -165,5 +199,5 @@ demo clients, all `acct_demo`, plus 4 matching `approval_requests` rows
 - HERMES-INTEGRATION.md section for reviews and the postproxy.dev
   connection guide (https://postproxy.dev/reference/platforms/google-business/).
 - Actually posting approved replies via postproxy (agent-side execute).
-- A draft editor UI (Edit routes to the existing approval card for now).
+- Agent-side learning from edits (the reply-style note the agent maintains); this milestone only records and transports the (draft, edited) pair.
 - Auto-posting policies of any kind.
