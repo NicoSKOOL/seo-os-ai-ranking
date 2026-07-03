@@ -30,4 +30,6 @@
   ]
   // Secrets: COOKIE_SECRET is optional. Without it the Worker generates a
   // signing secret on first use and stores it in KV ("cookie_secret").
+  // Member deployments need no other secrets: AGENT_TOKEN and similar exist
+  // only in Nico's personal setup (wrangler.local.jsonc), not this template.
 }
