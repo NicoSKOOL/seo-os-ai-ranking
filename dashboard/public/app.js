@@ -1068,7 +1068,11 @@ function reviewTrend(rows){
     bars += d.count > 0
       ? `<path fill="${GREEN}" d="M${x} 92 V${y+3} Q${x} ${y} ${x+3} ${y} H${x+bw-3} Q${x+bw} ${y} ${x+bw} ${y+3} V92 Z"><title>${esc(d.label)} · ${d.count} review${d.count===1?'':'s'}${d.rating?` · ${d.rating.toFixed(1)}★ avg`:''}</title></path>`
       : `<rect x="${x}" y="90" width="${bw}" height="2" rx="1" fill="#DDE3E1"/>`;
-    if(i === n-1 && d.count > 0) bars += `<text class="dl" x="${x+bw/2}" y="${y-5}" text-anchor="middle">${d.count}</text>`;
+    if(i === n-1 && d.count > 0) {
+      const labelY = y >= 24 ? y - 5 : y + 14;
+      const style = y >= 24 ? '' : ' style="fill:#fff"';
+      bars += `<text class="dl" x="${x+bw/2}" y="${labelY}" text-anchor="middle"${style}>${d.count}</text>`;
+    }
     bars += `<text x="${PAD_L+slot*i+slot/2}" y="106" text-anchor="middle">${esc(d.label)}</text>`;
   });
   bars += '</svg>';
@@ -1087,7 +1091,10 @@ function reviewTrend(rows){
   line += polys;
   data.forEach((d,i) => { if(d.rating === null) return; const x = PAD_L + slot*i + slot/2;
     line += `<circle cx="${x}" cy="${ry(d.rating)}" r="4" fill="${AMBER}" stroke="#fff" stroke-width="2"><title>${esc(d.label)} · ${d.rating.toFixed(1)}★ avg of ${d.count}</title></circle>`; });
-  if(last) line += `<circle cx="${last.x}" cy="${last.y}" r="5.5" fill="${AMBER}" stroke="#fff" stroke-width="2"/><text class="dl" x="${last.x}" y="${last.y-9}" text-anchor="middle">${last.r.toFixed(1)}★</text>`;
+  if(last) {
+    const labelY = last.y >= 24 ? last.y - 9 : last.y + 18;
+    line += `<circle cx="${last.x}" cy="${last.y}" r="5.5" fill="${AMBER}" stroke="#fff" stroke-width="2"/><text class="dl" x="${last.x}" y="${labelY}" text-anchor="middle">${last.r.toFixed(1)}★</text>`;
+  }
   line += '</svg>';
   const chip = (id, lbl) => `<button class="rchip${state.reviewRange===id?' active':''}" data-act="revRange" data-val="${id}">${lbl}</button>`;
   return `<div class="section-label trend-label">Review trend <span class="range-chips">${chip('30d','30 days')}${chip('12w','12 weeks')}${chip('12m','12 months')}</span></div>
