@@ -75,11 +75,13 @@ while true; do
   python3 - "$DB_PATH" "$CID" "$CNAME" "$CDOMAIN" "$CPROFILE" "$CWORKSPACE" <<'PYEOF'
 import sqlite3, sys, datetime
 db = sqlite3.connect(sys.argv[1]); now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
-db.execute("""INSERT INTO clients (id,name,domain,role,status,hermes_profile,workspace,created_at,updated_at)
-              VALUES (?,?,?,?,?,?,?,?,?)
+db.execute("""INSERT INTO clients (id,name,domain,role,status,health_score,hermes_profile,telegram_topic,
+                gsc_status,ga4_status,repo_status,workspace,created_at,updated_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
               ON CONFLICT(id) DO UPDATE SET name=excluded.name, hermes_profile=excluded.hermes_profile,
                 workspace=excluded.workspace, updated_at=excluded.updated_at""",
-           (sys.argv[2], sys.argv[3], sys.argv[4], "client", "active", sys.argv[5], sys.argv[6], now, now))
+           (sys.argv[2], sys.argv[3], sys.argv[4], "client", "active", 0, sys.argv[5], "not_bound",
+            "needs_setup", "needs_setup", "needs_setup", sys.argv[6], now, now))
 db.commit(); print("client saved:", sys.argv[2])
 PYEOF
 done
