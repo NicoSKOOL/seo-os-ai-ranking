@@ -1,3 +1,11 @@
+## Deploy your own SEO OS dashboard
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/NicoSKOOL/seo-os-ai-ranking/tree/main/dashboard)
+
+One click deploys YOUR dashboard (your Cloudflare account, your database, your
+data). Then a 2-minute browser setup and one command on your VPS. Full
+walkthrough: [SETUP.md](SETUP.md). Updating later: [UPDATING.md](UPDATING.md).
+
 # SEO OS AI Ranking
 
 A reusable starter kit for running an SEO operating system with Hermes Agent and a VPS-local custom dashboard.
