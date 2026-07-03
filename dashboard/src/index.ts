@@ -60,8 +60,35 @@ interface AccountRow {
 const SESSION_COOKIE = "seo_os_sess";
 const PBKDF2_ITERATIONS = 100000;
 
-function getSecret(env: Env): string {
-  return env.COOKIE_SECRET || "dev-secret-change-me";
+function hexToBytes(hex: string): Uint8Array {
+  const a = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return a;
+}
+function bytesToHex(b: Uint8Array): string {
+  return [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+// Cookie-signing secret. Members deployed via the button set no secret at all:
+// the Worker generates one on first use and persists it in KV. An explicit
+// COOKIE_SECRET (Nico's setup) always wins. Deleting the KV value logs every
+// session out, which is an acceptable reset lever.
+let cachedSecret: string | null = null;
+async function getSecret(env: Env): Promise<string> {
+  if (env.COOKIE_SECRET) return env.COOKIE_SECRET;
+  if (cachedSecret) return cachedSecret;
+  if (env.KV) {
+    let s = await env.KV.get("cookie_secret");
+    if (!s) {
+      const b = new Uint8Array(32);
+      crypto.getRandomValues(b);
+      s = bytesToHex(b);
+      await env.KV.put("cookie_secret", s);
+    }
+    cachedSecret = s;
+    return s;
+  }
+  return "dev-secret-change-me";
 }
 
 async function hmac(value: string, secret: string): Promise<string> {
@@ -94,14 +121,6 @@ function cookieHeader(name: string, value: string, maxAgeSeconds: number): strin
   return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAgeSeconds}`;
 }
 
-function hexToBytes(hex: string): Uint8Array {
-  const a = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.substr(i * 2, 2), 16);
-  return a;
-}
-function bytesToHex(b: Uint8Array): string {
-  return [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
-}
 async function pbkdf2Hex(password: string, salt: Uint8Array, iterations: number): Promise<string> {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, key, 256);
@@ -121,7 +140,7 @@ async function verifyPassword(password: string, stored: string | null): Promise<
 
 // Resolve the signed-in operator's account from the session cookie.
 async function resolveAccount(req: Request, env: Env): Promise<AccountRow | null> {
-  const v = await unsignValue(parseCookies(req)[SESSION_COOKIE] || null, getSecret(env));
+  const v = await unsignValue(parseCookies(req)[SESSION_COOKIE] || null, await getSecret(env));
   if (!v) return null;
   const accountId = v.split("|")[0];
   if (!accountId) return null;
@@ -279,7 +298,7 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
       .first<{ account_id: string; password_hash: string | null; name: string }>();
     const ok = member ? await verifyPassword(password, member.password_hash) : false;
     if (!member || !ok) return bad(401, "Wrong email or password.");
-    const cookie = await signValue(`${member.account_id}|${email}`, getSecret(env));
+    const cookie = await signValue(`${member.account_id}|${email}`, await getSecret(env));
     return json(
       { ok: true, account: { id: member.account_id, name: member.name } },
       { headers: { "set-cookie": cookieHeader(SESSION_COOKIE, cookie, 60 * 60 * 24 * 30) } },
@@ -341,7 +360,7 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
     if (appr.type === "policy") return bad(400, "Policy rows are not decidable.");
 
     // Operator email lives in the signed session cookie ("<account_id>|<email>").
-    const cookieVal = await unsignValue(parseCookies(req)[SESSION_COOKIE] || null, getSecret(env));
+    const cookieVal = await unsignValue(parseCookies(req)[SESSION_COOKIE] || null, await getSecret(env));
     const email = cookieVal ? cookieVal.split("|")[1] || "" : "";
 
     const cmdType = decision === "approved" ? "execute_approved_task" : "record_decision";
@@ -415,7 +434,7 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
       if (!owns) clientId = null; // unknown client => orchestrator, never another account's client
     }
     const sessionKey = clientId ? `dashboard-chat-${clientId}` : "dashboard-chat-orchestrator";
-    const cookieVal = await unsignValue(parseCookies(req)[SESSION_COOKIE] || null, getSecret(env));
+    const cookieVal = await unsignValue(parseCookies(req)[SESSION_COOKIE] || null, await getSecret(env));
     const email = cookieVal ? cookieVal.split("|")[1] || "" : "";
     const msgId = `chat_${crypto.randomUUID()}`;
     const cmdId = `cmd_${crypto.randomUUID()}`;
