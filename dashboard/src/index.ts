@@ -16,6 +16,8 @@
  * its own scope. In local dev (no Access header) we assume a single account.
  */
 
+import { VERSION } from "./version";
+
 interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
@@ -256,9 +258,9 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
   if (path === "/api/health" && method === "GET") {
     try {
       const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM accounts`).first<{ n: number }>();
-      return json({ ok: true, accounts: r?.n ?? 0 });
+      return json({ ok: true, accounts: r?.n ?? 0, version: VERSION });
     } catch (e: any) {
-      return json({ ok: false, error: String(e?.message || e) }, { status: 500 });
+      return json({ ok: false, error: String(e?.message || e), version: VERSION }, { status: 500 });
     }
   }
 
