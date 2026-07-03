@@ -33,6 +33,6 @@ the upstream version is newer.
 From the `dashboard/` folder of your repo clone (needs Node + wrangler,
 logged in to your Cloudflare account):
 
-    python3 -c "import hashlib,os; s=os.urandom(16); pw=input('New password: '); print('pbkdf2$100000$'+s.hex()+'$'+hashlib.pbkdf2_hmac('sha256',pw.encode(),s,100000).hex())"
+    python3 -c 'import hashlib,os; s=os.urandom(16); pw=input("New password: "); print("pbkdf2$100000$"+s.hex()+"$"+hashlib.pbkdf2_hmac("sha256",pw.encode(),s,100000).hex())'
     npx wrangler d1 execute seo-os-db --remote --command \
       "UPDATE account_members SET password_hash='<paste the printed value>' WHERE email='<your email>'"
