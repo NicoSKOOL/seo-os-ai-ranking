@@ -122,11 +122,22 @@ Layout, top to bottom:
    separate panels over the same axis. Buckets: weekly for 30 days and 12
    weeks, monthly for 12 months. Hovering a bar or marker shows a tooltip
    with period, count, and average rating.
-3. **Themes customers mention**: chips aggregated from `themes` tags. Each
-   chip shows tag, review count, and that tag's average rating; chip tone by
-   average rating (green at 4.0 or above, amber 3.0 to 3.9, red below 3.0).
-   Sorted by count descending. Clicking a chip filters the feed to that
-   theme (client-side state only); clicking again clears the filter.
+3. **Themes customers mention**: a card of theme rows aggregated from
+   `themes` tags, sorted by mention count descending. The card opens with a
+   one-line insight derived display-side: the strongest theme (highest
+   count with average 4.0 or above) and the weakest (lowest average),
+   for example "Customers love your people and your results. Wait times are
+   the one theme dragging the rating: 4 mentions averaging 2.5 stars." Each
+   row shows: theme name; a horizontal bar whose length is mention count
+   relative to the most-mentioned theme; the mention count; the theme's
+   average rating; and one representative quote, italic and muted, taken
+   from the most recent review carrying that tag (truncated to about 90
+   characters). Bar and rating tone by average rating: green at 4.0 or
+   above, amber 3.0 to 3.9, red below 3.0. The lowest-rated theme gets a
+   red "Biggest drag" badge when its average is below 3.0. Bar length
+   encodes ONLY frequency; rating is shown as a number, never as length.
+   Clicking a row filters the feed to that theme (client-side state only);
+   clicking again clears the filter.
 4. **Review feed**: newest first. Each card shows reviewer, star rating,
    relative date, review text, small theme tags, and a status badge
    (`Replied` green, `Draft ready` amber, `Needs reply` amber). Replied
