@@ -1,0 +1,30 @@
+name: SEO OS Update
+# Manual only, by design: updates ship when the member clicks Run workflow.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fast-forward from upstream SEO OS
+        run: |
+          git remote add upstream https://github.com/NicoSKOOL/seo-os-ai-ranking.git
+          git fetch upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "Already up to date. Nothing to do."
+            exit 0
+          fi
+          git config user.name "seo-os-update"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git merge --ff-only upstream/main; then
+            echo "::error::Your copy has local changes, so it cannot fast-forward. See UPDATING.md for the manual merge steps. Your changes were NOT touched."
+            exit 1
+          fi
+          git push origin HEAD
