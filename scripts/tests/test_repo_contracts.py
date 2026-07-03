@@ -16,3 +16,8 @@ def test_served_bridge_copies_do_not_drift():
         src = (ROOT / "scripts" / name).read_bytes()
         served = (ROOT / "dashboard" / "public" / name).read_bytes()
         assert src == served, f"dashboard/public/{name} drifted from scripts/{name}"
+
+def test_local_schema_copies_do_not_drift():
+    src = (ROOT / "dashboard" / "db" / "local-schema.sql").read_bytes()
+    served = (ROOT / "dashboard" / "public" / "local-schema.sql").read_bytes()
+    assert src == served
