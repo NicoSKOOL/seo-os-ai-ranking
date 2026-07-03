@@ -1172,7 +1172,13 @@ function viewReviews(){
   const rows = reviewsFor(d);
   if(!rows.length){
     return pageTitle('Review Management', 'Hermes watches each connected Google Business Profile, clusters what customers mention, and drafts a reply for every review that has none. Nothing posts without your approval.')
-      + `<div class="card lead-card"><span class="lead-icon slate">${svg('star', 24, 1.7)}</span><div><h2>No reviews yet for this view</h2><p>Reviews activate when this client's agent is connected to a Google Business Profile (postproxy.dev) and starts writing reviews to its SEO OS database. See HERMES-INTEGRATION.md for the wiring.</p></div></div>`;
+      + `<div class="card lead-card"><span class="lead-icon slate">${svg('star', 24, 1.7)}</span><div><h2>No reviews yet for this view</h2><p>Reviews activate when this client's agent is connected to a Google Business Profile (postproxy.dev) and starts writing reviews to its SEO OS database. See HERMES-INTEGRATION.md for the wiring.</p></div></div>`
+      + `<div class="section-label">How Hermes handles reviews</div>
+      <div class="how-grid">
+        <div class="card how-card"><div style="display:flex;align-items:center;gap:8px"><span class="stars">★★★★★</span>${badge('Approval required', 'amber')}</div><h3>Positive review</h3><p>Thank them, mention the service naturally, and invite them back. Hermes drafts it; you approve before it posts.</p></div>
+        <div class="card how-card"><div style="display:flex;align-items:center;gap:8px"><span class="stars">★★★☆☆</span>${badge('Approval required', 'amber')}</div><h3>Neutral review</h3><p>Acknowledge the mixed experience and show what improves next. Drafted for your approval.</p></div>
+        <div class="card how-card"><div style="display:flex;align-items:center;gap:8px"><span class="stars">★★☆☆☆</span>${badge('Approval required', 'amber')}</div><h3>Negative review</h3><p>Own the miss, stay non-defensive, and offer a concrete next step. Always held for your approval.</p></div>
+      </div>`;
   }
   const total = rows.length;
   const replied = rows.filter(r => r.reply_status === 'replied').length;
@@ -1206,7 +1212,7 @@ function viewReviews(){
 function viewCaps(){
   const d = state.data;
   const areaFor = jt => ({ data_refresh:'SEO data', reviews:'Reviews', opportunity:'Opportunities', content:'Content', crawl:'Site health' }[jt] || label(jt));
-  const approvalFor = jt => (jt === 'data_refresh' ? 'No' : jt === 'reviews' ? 'Negatives only' : 'Yes');
+  const approvalFor = jt => (jt === 'data_refresh' ? 'No' : jt === 'reviews' ? 'Every reply' : 'Yes');
   const trs = (d.jobs || []).map(j => `<tr>
     <td class="td pl">${clientCell(j.client_id)}</td>
     <td class="td muted" style="white-space:nowrap">${esc(areaFor(j.job_type))}</td>
