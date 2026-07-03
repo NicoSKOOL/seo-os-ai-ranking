@@ -226,6 +226,13 @@ async function summary(env: Env, account: AccountRow, clientId: string) {
     clientId,
     "ORDER BY updated_at DESC",
   );
+  const reviews = await listScoped(
+    env,
+    "SELECT * FROM reviews",
+    accountId,
+    clientId,
+    "ORDER BY published_at DESC",
+  );
 
   const { results: settingRows } = await env.DB.prepare(
     `SELECT key, value FROM settings WHERE account_id = ?1`,
@@ -256,6 +263,7 @@ async function summary(env: Env, account: AccountRow, clientId: string) {
     jobs,
     events,
     artifacts,
+    reviews,
     settings,
     sync: { last_agent_sync: lastSync, stale },
     kpis: {
@@ -388,9 +396,10 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
     const approvalId = path.slice("/api/approvals/".length, -"/decision".length);
     if (!approvalId) return bad(404, "Approval not found.");
 
-    const body = await readJson<{ decision?: string; note?: string }>(req);
+    const body = await readJson<{ decision?: string; note?: string; edited_reply?: string }>(req);
     const decision = (body?.decision || "").trim();
     const note = (body?.note || "").trim().slice(0, 1000);
+    const editedReply = (body?.edited_reply || "").trim().slice(0, 2000);
     if (decision !== "approved" && decision !== "needs_changes" && decision !== "rejected") {
       return bad(400, "Invalid decision.");
     }
@@ -417,6 +426,8 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
       title: appr.title,
       source_url: appr.source_url,
       requested_action: appr.requested_action,
+      original_draft: appr.type === "review_reply" ? appr.requested_action : undefined,
+      edited_reply: appr.type === "review_reply" && editedReply ? editedReply : undefined,
     });
     // Deterministic so a double-click (same approval + same decision) collapses to a
     // single audit row via ON CONFLICT DO NOTHING. A later different decision on the
@@ -432,7 +443,7 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
     const idempotencyKey = `appr:${appr.id}:${decision}`;
     const commandId = `cmd_${crypto.randomUUID()}`;
 
-    await env.DB.batch([
+    const stmts = [
       env.DB.prepare(
         `UPDATE approval_requests
             SET status = ?1, decision_note = ?2, decided_by = ?3, decided_at = ${NOW_ISO}, updated_at = ${NOW_ISO}
@@ -456,7 +467,38 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
            client_id=excluded.client_id, type=excluded.type, updated_at=datetime('now')
          WHERE commands.status='failed'`,
       ).bind(commandId, account.id, appr.client_id, cmdType, payloadJson, idempotencyKey, email),
-    ]);
+    ];
+
+    // review_reply approvals also flip the linked review row: approve marks it
+    // replied (the edited text wins over the original draft when supplied);
+    // reject/needs_changes un-drafts it so it falls back into the needs-reply queue.
+    if (appr.type === "review_reply") {
+      if (decision === "approved") {
+        stmts.push(
+          env.DB.prepare(
+            `UPDATE reviews
+                SET reply_status = 'replied',
+                    reply_text   = CASE WHEN ?1 != '' THEN ?1 ELSE reply_text END,
+                    replied_at   = ${NOW_ISO},
+                    updated_at   = ${NOW_ISO}
+              WHERE approval_id = ?2 AND account_id = ?3`,
+          ).bind(editedReply, appr.id, account.id),
+        );
+      } else {
+        stmts.push(
+          env.DB.prepare(
+            `UPDATE reviews
+                SET reply_status = 'needs_reply',
+                    reply_text   = '',
+                    approval_id  = NULL,
+                    updated_at   = ${NOW_ISO}
+              WHERE approval_id = ?1 AND account_id = ?2`,
+          ).bind(appr.id, account.id),
+        );
+      }
+    }
+
+    await env.DB.batch(stmts);
 
     return json({ ok: true });
   }
