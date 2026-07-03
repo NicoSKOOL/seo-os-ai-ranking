@@ -49,3 +49,22 @@ def test_run_acp_chat_raises_on_error(monkeypatch):
         assert False, "expected RuntimeError"
     except RuntimeError as e:
         assert "boom" in str(e)
+
+
+def test_chat_reply_falls_back_politely_when_venv_py_unconfigured(monkeypatch):
+    """HERMES_VENV_PY='' (installer's venv prompt skipped) must not reach
+    subprocess.run with an empty argv[0]; it should return the same polite
+    fallback used when chat is turned off entirely."""
+    mod = _load()
+    monkeypatch.setattr(mod, "CHAT_ENABLED", True)
+    monkeypatch.setattr(mod, "VENV_PY", "")
+
+    def boom(*a, **k):
+        raise AssertionError("run_acp_chat must not be called when VENV_PY is empty")
+
+    monkeypatch.setattr(mod, "run_acp_chat", boom)
+    cmd = {"type": "chat_reply", "payload_json": json.dumps({"body": "hi"})}
+    res = mod.apply_command(None, cmd)
+    assert res["status"] == "done"
+    assert "temporarily turned off" in res["result"]["reply_body"]
+    assert res["result"]["proposals"] == []

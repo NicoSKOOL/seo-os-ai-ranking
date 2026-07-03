@@ -513,7 +513,10 @@ def apply_command(conn: sqlite3.Connection, cmd: dict) -> dict:
 
         if cmd_type == "chat_reply":
             # SAFETY HOLD: never invoke Hermes for chat until tool restriction is real.
-            if not CHAT_ENABLED:
+            # Also cover an unconfigured Hermes venv python (HERMES_VENV_PY left empty
+            # when the installer's venv prompt was skipped): fail politely, not with a
+            # bare FileNotFoundError('') from subprocess.
+            if not CHAT_ENABLED or not VENV_PY:
                 return {"status": "done", "result": {
                     "reply_body": "Chat is temporarily turned off while we finish its safety setup. It will be back shortly.",
                     "proposals": [],
