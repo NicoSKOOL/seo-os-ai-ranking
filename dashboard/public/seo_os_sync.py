@@ -412,10 +412,13 @@ def apply_command(conn: sqlite3.Connection, cmd: dict) -> dict:
                     (summary[:2000], now(), approval_id),
                 )
                 conn.execute(
-                    "INSERT INTO activity_events (id,client_id,kind,summary,created_at) "
-                    "VALUES (?,?,?,?,?)",
-                    (uid("evt"), client_id, "chat_execute",
-                     f"Executed: {title} - {summary[:200]}", now()),
+                    "INSERT INTO activity_events (id,client_id,source,event_type,status,"
+                    "summary,next_action,artifact,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                    (uid("evt"), client_id, "hermes", "chat_execute", task_status,
+                     f"Executed: {title} - {summary[:200]}",
+                     "Review the result in Agent Tasks." if ok
+                     else "Execution failed; retry from the dashboard or check Hermes logs.",
+                     source_url or "", now()),
                 )
                 conn.commit()
                 return {"status": "done" if ok else "failed",

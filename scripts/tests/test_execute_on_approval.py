@@ -1,8 +1,10 @@
 import importlib.util
 import os
+import pathlib
 import sqlite3
 
 SPEC = os.path.join(os.path.dirname(__file__), "..", "seo_os_sync.py")
+LOCAL_SCHEMA = os.path.join(os.path.dirname(__file__), "..", "..", "dashboard", "db", "local-schema.sql")
 
 
 def _load():
@@ -15,18 +17,24 @@ def _load():
 def _db():
     c = sqlite3.connect(":memory:")
     c.row_factory = sqlite3.Row
-    c.executescript(
-        "CREATE TABLE clients(id TEXT, hermes_profile TEXT, workspace TEXT, domain TEXT, telegram_topic TEXT);"
-        "CREATE TABLE approval_requests(id TEXT, client_id TEXT, title TEXT, requested_action TEXT,"
-        " evidence TEXT, source_url TEXT, status TEXT, decision_note TEXT, updated_at TEXT);"
-        "CREATE TABLE agent_tasks(id TEXT, client_id TEXT, title TEXT, priority TEXT, status TEXT,"
-        " source TEXT, owner_profile TEXT, page_asset TEXT, next_action TEXT, notes TEXT,"
-        " created_at TEXT, updated_at TEXT);"
-        "CREATE TABLE activity_events(id TEXT, client_id TEXT, kind TEXT, summary TEXT, created_at TEXT);"
+    # Build against the real local (VPS) schema, not a hand-rolled stand-in,
+    # so drift between this test and the actual tables gets caught.
+    c.executescript(pathlib.Path(LOCAL_SCHEMA).read_text())
+    c.execute(
+        "INSERT INTO clients (id,name,domain,role,status,health_score,hermes_profile,"
+        "telegram_topic,gsc_status,ga4_status,repo_status,workspace,created_at,updated_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ("datawise", "DataWise SEO", "www.datawiseseo.com", "client", "active", 80,
+         "datawise-seo", "", "connected", "connected", "connected",
+         "/root/seo-sites/datawiseseo.com", "2026-01-01T00:00:00", "2026-01-01T00:00:00"),
     )
-    c.execute("INSERT INTO clients VALUES('datawise','datawise-seo','/root/seo-sites/datawiseseo.com','www.datawiseseo.com','')")
-    c.execute("INSERT INTO approval_requests VALUES('appr1','datawise','Fix title','Rewrite title',"
-              "'ev','/post/x','needs_review','',NULL)")
+    c.execute(
+        "INSERT INTO approval_requests (id,client_id,title,type,risk,status,requested_action,"
+        "evidence,source_url,agent_confidence,production_gate,created_at,updated_at,decision_note) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        ("appr1", "datawise", "Fix title", "content", "low", "needs_review", "Rewrite title",
+         "ev", "/post/x", "high", "manual", "2026-01-01T00:00:00", "2026-01-01T00:00:00", ""),
+    )
     c.commit()
     return c
 
