@@ -283,6 +283,51 @@ async function handleApi(req: Request, env: Env, url: URL): Promise<Response> {
     }
   }
 
+  // GET /api/setup -> is first-boot setup still open? (no auth; safe boolean)
+  if (path === "/api/setup" && method === "GET") {
+    const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM accounts`).first<{ n: number }>();
+    return json({ setup_needed: (r?.n ?? 0) === 0 });
+  }
+
+  // POST /api/setup {name?, email, password} -> create the first (and only) account.
+  // Open ONLY while the accounts table is empty; 403 forever after. Accepted risk
+  // (documented in the spec): a stranger could claim a freshly deployed URL before
+  // its owner opens it; the remedy is redeploying with a fresh database.
+  if (path === "/api/setup" && method === "POST") {
+    const r = await env.DB.prepare(`SELECT COUNT(*) AS n FROM accounts`).first<{ n: number }>();
+    if ((r?.n ?? 0) > 0) return bad(403, "Setup is already complete. Sign in instead.");
+    const body = await readJson<{ name?: string; email?: string; password?: string }>(req);
+    const email = (body?.email || "").trim().toLowerCase();
+    const password = body?.password || "";
+    const name = ((body?.name || "").trim() || "My SEO OS").slice(0, 80);
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(400, "A valid email is required.");
+    if (password.length < 8) return bad(400, "Password must be at least 8 characters.");
+
+    const accountId = `acct_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
+    const tokenBytes = new Uint8Array(32);
+    crypto.getRandomValues(tokenBytes);
+    const agentToken = `seo_os_${bytesToHex(tokenBytes)}`;
+    const salt = new Uint8Array(16);
+    crypto.getRandomValues(salt);
+    const passwordHash = `pbkdf2$${PBKDF2_ITERATIONS}$${bytesToHex(salt)}$${await pbkdf2Hex(password, salt, PBKDF2_ITERATIONS)}`;
+
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO accounts (id, name, plan, agent_token_hash) VALUES (?1, ?2, 'self_install', ?3)`,
+      ).bind(accountId, name, await sha256hex(agentToken)),
+      env.DB.prepare(
+        `INSERT INTO account_members (account_id, email, role, password_hash) VALUES (?1, ?2, 'operator', ?3)`,
+      ).bind(accountId, email, passwordHash),
+    ]);
+
+    const cookie = await signValue(`${accountId}|${email}`, await getSecret(env));
+    const installCommand = `curl -fsSL ${url.origin}/install-vps.sh -o /root/install-vps.sh && bash /root/install-vps.sh ${url.origin} ${agentToken}`;
+    return json(
+      { ok: true, agent_token: agentToken, dashboard_url: url.origin, install_command: installCommand },
+      { headers: { "set-cookie": cookieHeader(SESSION_COOKIE, cookie, 60 * 60 * 24 * 30) } },
+    );
+  }
+
   // POST /api/login { email, password } -> set the session cookie.
   if (path === "/api/login" && method === "POST") {
     const body = await readJson<{ email?: string; password?: string }>(req);
