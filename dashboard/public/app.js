@@ -461,8 +461,11 @@ function checkVersion(){
     const el = document.getElementById('sidebar-version');
     if(el) el.innerHTML = versionInfo.html;
     try {
-      const up = (await (await fetch('https://raw.githubusercontent.com/NicoSKOOL/seo-os-ai-ranking/main/VERSION')).text()).trim();
-      if(up && up !== h.version){
+      const res = await fetch('https://raw.githubusercontent.com/NicoSKOOL/seo-os-ai-ranking/main/VERSION');
+      if (!res.ok) return;
+      const up = (await res.text()).trim();
+      if (!/^\d+\.\d+\.\d+$/.test(up)) return;
+      if(up !== h.version){
         versionInfo.html = 'v' + esc(h.version) + ' &middot; <a href="https://github.com/NicoSKOOL/seo-os-ai-ranking/blob/main/UPDATING.md" target="_blank" rel="noopener">Update available (v' + esc(up) + ')</a>';
         const el2 = document.getElementById('sidebar-version');
         if(el2) el2.innerHTML = versionInfo.html;
