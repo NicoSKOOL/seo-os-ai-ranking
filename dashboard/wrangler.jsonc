@@ -1,0 +1,33 @@
+{
+  // SEO OS dashboard: member template. No resource IDs on purpose: the
+  // Deploy-to-Cloudflare flow auto-provisions a fresh D1 database, KV
+  // namespace, and R2 bucket per deployment.
+  // Nico's personal config lives in wrangler.local.jsonc (git-ignored);
+  // he deploys with `npm run deploy:mine`.
+  "name": "seo-os",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-13",
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "seo-os-db"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "REPORTS",
+      "bucket_name": "seo-os-reports"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV"
+    }
+  ]
+  // Secrets: COOKIE_SECRET is optional. Without it the Worker generates a
+  // signing secret on first use and stores it in KV ("cookie_secret").
+}

@@ -5,11 +5,10 @@
   "description": "SEO OS hosted dashboard - Cloudflare Worker serving the operator command center over D1, fed by a VPS Hermes worker.",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "db:init": "wrangler d1 execute seo-os-db --local --file=src/db/schema.sql",
-    "db:seed": "wrangler d1 execute seo-os-db --local --file=src/db/seed-demo.sql",
-    "db:init:remote": "wrangler d1 execute seo-os-db --remote --file=src/db/schema.sql",
-    "db:seed:remote": "wrangler d1 execute seo-os-db --remote --file=src/db/seed-demo.sql"
+    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "deploy:mine": "wrangler d1 migrations apply DB --remote -c wrangler.local.jsonc && wrangler deploy -c wrangler.local.jsonc",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "db:seed": "wrangler d1 execute seo-os-db --local --file=src/db/seed-demo.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250313.0",
