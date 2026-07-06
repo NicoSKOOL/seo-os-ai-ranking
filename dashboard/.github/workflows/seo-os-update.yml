@@ -1,0 +1,44 @@
+name: SEO OS Update
+# Manual only, by design: updates ship when you click Run workflow.
+#
+# Your repo was created by the Deploy-to-Cloudflare button, which copies the
+# dashboard/ folder of the upstream SEO OS repo into your own repo with a
+# fresh history. A git merge from upstream can therefore never fast-forward
+# here. Instead this workflow overlays the latest upstream dashboard files
+# onto your copy and commits the result. Two things are never touched:
+#   - wrangler.jsonc (holds YOUR Cloudflare resource IDs)
+#   - .github/ (this workflow; also, the Actions token may not modify it)
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Overlay latest SEO OS from upstream
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/NicoSKOOL/seo-os-ai-ranking.git /tmp/upstream
+          UPSTREAM_SHA=$(git -C /tmp/upstream rev-parse --short HEAD)
+          UPSTREAM_VERSION=$(sed -n 's/.*VERSION = "\([^"]*\)".*/\1/p' /tmp/upstream/dashboard/src/version.ts || true)
+          UPSTREAM_VERSION=${UPSTREAM_VERSION:-unknown}
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'wrangler.jsonc' \
+            --exclude 'node_modules' \
+            /tmp/upstream/dashboard/ ./
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "seo-os-update"
+            git config user.email "actions@users.noreply.github.com"
+            git add -A
+            git commit -m "SEO OS update to v${UPSTREAM_VERSION} (upstream ${UPSTREAM_SHA})"
+            git push origin HEAD
+            echo "Updated to v${UPSTREAM_VERSION}. Cloudflare builds and deploys this push automatically (watch Workers & Pages in your Cloudflare dashboard)."
+          else
+            echo "Already up to date (v${UPSTREAM_VERSION}). Nothing to do."
+          fi
