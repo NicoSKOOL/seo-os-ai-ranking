@@ -1,7 +1,8 @@
 {
   // SEO OS dashboard: member template. No resource IDs on purpose: the
-  // Deploy-to-Cloudflare flow auto-provisions a fresh D1 database, KV
-  // namespace, and R2 bucket per deployment.
+  // Deploy-to-Cloudflare flow auto-provisions a fresh D1 database and KV
+  // namespace per deployment. No R2: it requires a billing-enabled
+  // subscription, which new member accounts don't have, and nothing uses it.
   // Nico's personal config lives in wrangler.local.jsonc (git-ignored);
   // he deploys with `npm run deploy:mine`.
   "name": "seo-os",
@@ -15,12 +16,6 @@
     {
       "binding": "DB",
       "database_name": "seo-os-db"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "REPORTS",
-      "bucket_name": "seo-os-reports"
     }
   ],
   "kv_namespaces": [
