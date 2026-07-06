@@ -7,6 +7,15 @@ repo's `dashboard/` folder into your own repo with a fresh history. Updates
 therefore work by overlay, not by git merge: the update workflow copies the
 latest official app files over your copy and commits the result.
 
+## First time only: add the update workflow
+
+GitHub does not allow Cloudflare's bot to install workflows, so your copy was
+created without one. Add it once yourself (30 seconds): in YOUR repo click
+**Add file** -> **Create new file**, name it exactly
+`.github/workflows/seo-os-update.yml`, paste the contents of
+[the workflow file](https://raw.githubusercontent.com/NicoSKOOL/seo-os-ai-ranking/main/dashboard/.github/workflows/seo-os-update.yml),
+and commit. (Cloudflare will run one harmless redeploy.)
+
 ## The one-click way
 
 1. Open YOUR copy of the repo on GitHub.

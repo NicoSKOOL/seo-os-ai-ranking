@@ -11,6 +11,15 @@ Cloudflare account: your Worker, your database, your data.
 
 Updates are manual on purpose: nothing changes until you trigger it.
 
+**First time only:** GitHub does not allow Cloudflare's bot to install the
+update workflow for you, so add it once yourself: click **Add file** ->
+**Create new file** in this repo, name it exactly
+`.github/workflows/seo-os-update.yml`, paste the contents of
+[the workflow file](https://raw.githubusercontent.com/NicoSKOOL/seo-os-ai-ranking/main/dashboard/.github/workflows/seo-os-update.yml),
+and commit.
+
+Then, whenever you want to update:
+
 1. Open the **Actions** tab of this repo, choose **SEO OS Update**, click
    **Run workflow**.
 2. Wait about two minutes. Cloudflare redeploys your dashboard automatically.

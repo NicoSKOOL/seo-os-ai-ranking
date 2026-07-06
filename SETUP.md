@@ -28,6 +28,21 @@ few simple questions (which of your Hermes clients to show) and starts the
 connection. When it says SUCCESS, refresh your dashboard: your clients are
 live.
 
+## Step 4: Turn on one-click updates (1 minute, one time)
+
+GitHub does not allow Cloudflare's bot to install the update workflow for
+you, so you add it once yourself:
+
+1. Open YOUR copy of the repo on GitHub and click **Add file** ->
+   **Create new file**.
+2. In the filename box type exactly: `.github/workflows/seo-os-update.yml`
+3. Open [the workflow file](https://raw.githubusercontent.com/NicoSKOOL/seo-os-ai-ranking/main/dashboard/.github/workflows/seo-os-update.yml),
+   select everything, and paste it into the editor.
+4. Click **Commit changes**. (Cloudflare will run one harmless redeploy.)
+
+From then on, updating is one click: **Actions** tab -> **SEO OS Update** ->
+**Run workflow**. See UPDATING.md.
+
 ## After setup
 
 - Your dashboard refreshes from your VPS every couple of minutes.
