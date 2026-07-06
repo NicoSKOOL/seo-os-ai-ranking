@@ -17,16 +17,21 @@ it finishes, open your new dashboard URL.
 ## Step 2: Create your account (1 minute)
 
 The first time you open your dashboard it asks you to create your login:
-your email and a password. It then shows your **agent token** ONCE. Copy it
-somewhere safe: this is the key your VPS uses to talk to your dashboard. It
-also shows the single command for the next step.
+your email and a password. It then shows two things ONCE:
+
+- Your **agent token**: save it somewhere safe (password manager). This is
+  only a backup copy; you need it again only if you ever reinstall the
+  bridge or move to a new VPS. You never type it into Hermes or the
+  dashboard by hand.
+- The **run command** for the next step. Your token is already filled in at
+  the end of it, so there is no separate "enter your token" step anywhere.
 
 ## Step 3: Connect your VPS (about 5 minutes)
 
-SSH into your VPS and paste the command from the previous screen. It asks a
-few simple questions (which of your Hermes clients to show) and starts the
-connection. When it says SUCCESS, refresh your dashboard: your clients are
-live.
+SSH into your VPS as root and paste the entire run command from the previous
+screen. It asks a few simple questions (which of your Hermes clients to show)
+and starts the connection. When it says SUCCESS, refresh your dashboard: your
+clients are live.
 
 ## Step 4: Turn on one-click updates (1 minute, one time)
 
@@ -55,6 +60,14 @@ From then on, updating is one click: **Actions** tab -> **SEO OS Update** ->
 
 ## Troubleshooting
 
+- **The Cloudflare deploy page gets stuck on a gray loading skeleton** (the
+  "Set up your application" box never shows its form): this happens on
+  brand-new Cloudflare accounts. In another tab, log in at dash.cloudflare.com
+  and (1) verify your email address if there is a yellow banner asking you to,
+  and (2) open Workers & Pages and register your free `workers.dev` subdomain
+  if asked. Also allow pop-ups for deploy.workers.cloudflare.com (the GitHub
+  connection opens in one). Then go back and refresh the deploy page; the
+  link keeps everything, you lose nothing by refreshing.
 - **The wizard says "Setup is already complete" on a fresh deploy**: someone
   claimed the URL before you. Redeploy with a fresh database and open it
   right away.
